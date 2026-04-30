@@ -35,8 +35,13 @@ class _OrgPetListPageState extends State<OrgPetListPage> {
       context: context,
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Remover pet', style: TextStyle(fontWeight: FontWeight.w800)),
-        content: Text('Deseja remover "$petNome"? Esta ação não pode ser desfeita.'),
+        title: const Text(
+          'Remover pet',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+        content: Text(
+          'Deseja remover "$petNome"? Esta ação não pode ser desfeita.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -50,10 +55,14 @@ class _OrgPetListPageState extends State<OrgPetListPage> {
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(ok ? 'Pet removido.' : vm.error ?? 'Erro ao remover.'),
+                    content: Text(
+                      ok ? 'Pet removido.' : vm.error ?? 'Erro ao remover.',
+                    ),
                     backgroundColor: ok ? const Color(0xFF2E7D32) : Colors.red,
                     behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 );
               }
@@ -81,7 +90,10 @@ class _OrgPetListPageState extends State<OrgPetListPage> {
               children: [
                 // Search bar
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEEEAE6),
                     borderRadius: BorderRadius.circular(14),
@@ -97,9 +109,14 @@ class _OrgPetListPageState extends State<OrgPetListPage> {
                           decoration: InputDecoration(
                             border: InputBorder.none,
                             hintText: 'Buscar pet...',
-                            hintStyle: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                            hintStyle: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[500],
+                            ),
                             isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                            ),
                           ),
                           style: const TextStyle(fontSize: 13),
                         ),
@@ -117,7 +134,8 @@ class _OrgPetListPageState extends State<OrgPetListPage> {
                         context,
                         MaterialPageRoute(builder: (_) => const PetFormPage()),
                       );
-                      if (context.mounted) context.read<PetViewModel>().loadPets();
+                      if (context.mounted)
+                        context.read<PetViewModel>().loadPets();
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -163,16 +181,21 @@ class _OrgPetListPageState extends State<OrgPetListPage> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               itemCount: _filters.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (_, i) {
                 final f = _filters[i];
                 final isActive = vm.activeFilter == f;
                 return GestureDetector(
                   onTap: () => vm.setFilter(f),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: isActive ? const Color(0xFFCC6633) : const Color(0xFFEEEAE6),
+                      color: isActive
+                          ? const Color(0xFFCC6633)
+                          : const Color(0xFFEEEAE6),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
@@ -196,61 +219,72 @@ class _OrgPetListPageState extends State<OrgPetListPage> {
                     child: CircularProgressIndicator(color: Color(0xFFCC6633)),
                   )
                 : vm.error != null
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
-                            const SizedBox(height: 8),
-                            Text(
-                              vm.error!,
-                              style: TextStyle(color: Colors.grey[500], fontSize: 13),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 12),
-                            TextButton(
-                              onPressed: vm.loadPets,
-                              child: const Text('Tentar novamente'),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: Colors.grey[400],
                         ),
-                      )
-                    : vm.filteredPets.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Text('🐾', style: TextStyle(fontSize: 48)),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Nenhum pet encontrado.',
-                                  style: TextStyle(color: Colors.grey[500], fontSize: 13),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            itemCount: vm.filteredPets.length,
-                            itemBuilder: (_, i) {
-                              final pet = vm.filteredPets[i];
-                              return PetListCard(
-                                pet: pet,
-                                onTap: () async {
-                                  await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => PetFormPage(petId: pet.id),
-                                    ),
-                                  );
-                                  if (context.mounted) {
-                                    context.read<PetViewModel>().loadPets();
-                                  }
-                                },
-                                onDelete: () => _confirmDelete(context, pet.id, pet.nome),
-                              );
-                            },
+                        const SizedBox(height: 8),
+                        Text(
+                          vm.error!,
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 13,
                           ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: vm.loadPets,
+                          child: const Text('Tentar novamente'),
+                        ),
+                      ],
+                    ),
+                  )
+                : vm.filteredPets.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('🐾', style: TextStyle(fontSize: 48)),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Nenhum pet encontrado.',
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: vm.filteredPets.length,
+                    itemBuilder: (_, i) {
+                      final pet = vm.filteredPets[i];
+                      return PetListCard(
+                        pet: pet,
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PetFormPage(petId: pet.id),
+                            ),
+                          );
+                          if (context.mounted) {
+                            context.read<PetViewModel>().loadPets();
+                          }
+                        },
+                        onDelete: () =>
+                            _confirmDelete(context, pet.id, pet.nome),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

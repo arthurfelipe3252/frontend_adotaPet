@@ -66,9 +66,7 @@ Future<void> main() async {
           ),
         ),
 
-        ChangeNotifierProvider(
-          create: (_) => ForgotPasswordViewModel(),
-        ),
+        ChangeNotifierProvider(create: (_) => ForgotPasswordViewModel()),
 
         ChangeNotifierProvider<PetViewModel>.value(value: petViewModel),
       ],

@@ -39,23 +39,29 @@ class Pet {
     final anos = idadeMeses ~/ 12;
     final meses = idadeMeses % 12;
     if (anos > 0 && meses > 0) return '${anos}a ${meses}m';
-    if (anos > 0) return '${anos} ${anos == 1 ? 'ano' : 'anos'}';
-    return '${meses} ${meses == 1 ? 'mês' : 'meses'}';
+    if (anos > 0) return '$anos ${anos == 1 ? 'ano' : 'anos'}';
+    return '$meses ${meses == 1 ? 'mês' : 'meses'}';
   }
 
   String get especieLabel {
     switch (especie) {
-      case 'cao': return 'Cão';
-      case 'gato': return 'Gato';
-      default: return 'Outro';
+      case 'cao':
+        return 'Cão';
+      case 'gato':
+        return 'Gato';
+      default:
+        return 'Outro';
     }
   }
 
   String get porteLabel {
     switch (porte) {
-      case 'pequeno': return 'Pequeno';
-      case 'medio': return 'Médio';
-      default: return 'Grande';
+      case 'pequeno':
+        return 'Pequeno';
+      case 'medio':
+        return 'Médio';
+      default:
+        return 'Grande';
     }
   }
 
@@ -63,10 +69,14 @@ class Pet {
 
   String get statusLabel {
     switch (status) {
-      case 'disponivel': return 'Disponível';
-      case 'em_processo': return 'Em processo';
-      case 'adotado': return 'Adotado';
-      default: return status;
+      case 'disponivel':
+        return 'Disponível';
+      case 'em_processo':
+        return 'Em processo';
+      case 'adotado':
+        return 'Adotado';
+      default:
+        return status;
     }
   }
 }

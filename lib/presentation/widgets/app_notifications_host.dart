@@ -71,9 +71,7 @@ class _NotificationToastState extends State<_NotificationToast>
     _slide = Tween<Offset>(
       begin: const Offset(1.2, 0),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
     _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
 
     _controller.forward();

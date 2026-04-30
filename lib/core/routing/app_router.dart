@@ -10,6 +10,9 @@ import 'package:adota_pet/presentation/pages/desktop/register_protetor_ong_page.
 import 'package:adota_pet/presentation/pages/desktop/splash_page.dart';
 import 'package:adota_pet/presentation/pages/org_pet_list_page.dart';
 import 'package:adota_pet/presentation/pages/pet_form_page.dart';
+import 'package:adota_pet/presentation/pages/settings_page.dart'
+    as adota_settings;
+import 'package:adota_pet/domain/entities/user.dart';
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
 
 GoRouter buildAppRouter(AuthViewModel auth) {
@@ -37,9 +40,7 @@ GoRouter buildAppRouter(AuthViewModel auth) {
       }
 
       final isProtectedRoute =
-          loc == '/pets' ||
-          loc == '/pets/new' ||
-          loc.startsWith('/pets/');
+          loc == '/pets' || loc == '/pets/new' || loc.startsWith('/pets/');
 
       if (!auth.isAuthenticated && isProtectedRoute) {
         return '/login';
@@ -68,22 +69,25 @@ GoRouter buildAppRouter(AuthViewModel auth) {
             : const _MobilePlaceholder(message: 'Em breve'),
       ),
       // Rota legada de home — redireciona para /pets
-      GoRoute(
-        path: '/home',
-        redirect: (_, _) => '/pets',
-      ),
+      GoRoute(path: '/home', redirect: (_, _) => '/pets'),
       // ── Módulo de Pets ────────────────────────────────────────────────────
-      GoRoute(
-        path: '/pets',
-        builder: (_, _) => const OrgPetListPage(),
-      ),
-      GoRoute(
-        path: '/pets/new',
-        builder: (_, _) => const PetFormPage(),
-      ),
+      GoRoute(path: '/pets', builder: (_, _) => const OrgPetListPage()),
+      GoRoute(path: '/pets/new', builder: (_, _) => const PetFormPage()),
       GoRoute(
         path: '/pets/:id',
         builder: (_, state) => PetFormPage(petId: state.pathParameters['id']),
+      ),
+      // ── Configurações ───────────────────────────────────────────────────
+      GoRoute(
+        path: '/settings',
+        builder: (_, _) => const adota_settings.SettingsPage(
+          currentUser: User(
+            id: '1',
+            name: 'ONG Cão Feliz',
+            email: 'contato@caofeliz.org',
+            type: UserType.ngo,
+          ),
+        ),
       ),
     ],
   );

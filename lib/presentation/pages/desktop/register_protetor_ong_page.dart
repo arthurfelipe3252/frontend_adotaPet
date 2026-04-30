@@ -153,8 +153,8 @@ class _RegisterProtetorOngPageState extends State<RegisterProtetorOngPage> {
             children: [
               const AppNavBar(),
               // Página estática: o card tem altura fixa (todo o espaço entre
-                // navbar e footer), e o scroll acontece dentro do próprio card.
-                Expanded(
+              // navbar e footer), e o scroll acontece dentro do próprio card.
+              Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
@@ -166,41 +166,41 @@ class _RegisterProtetorOngPageState extends State<RegisterProtetorOngPage> {
                       child: SizedBox(
                         height: double.infinity,
                         child: _UnifiedFormCard(
-                        vm: vm,
-                        nomeCtrl: _nomeCtrl,
-                        emailCtrl: _emailCtrl,
-                        cpfCnpjCtrl: _cpfCnpjCtrl,
-                        telefoneCtrl: _telefoneCtrl,
-                        telefoneContatoCtrl: _telefoneContatoCtrl,
-                        cepCtrl: _cepCtrl,
-                        logradouroCtrl: _logradouroCtrl,
-                        numeroCtrl: _numeroCtrl,
-                        complementoCtrl: _complementoCtrl,
-                        bairroCtrl: _bairroCtrl,
-                        cidadeCtrl: _cidadeCtrl,
-                        estadoCtrl: _estadoCtrl,
-                        descricaoCtrl: _descricaoCtrl,
-                        senhaCtrl: _senhaCtrl,
-                        confirmarSenhaCtrl: _confirmarSenhaCtrl,
-                        cpfMask: _cpfMask,
-                        cnpjMask: _cnpjMask,
-                        telefoneMask: _telefoneMask,
-                        cepMask: _cepMask,
-                        showPassword: _showPassword,
-                        showConfirmar: _showConfirmar,
-                        onTogglePassword: () =>
-                            setState(() => _showPassword = !_showPassword),
-                        onToggleConfirmar: () =>
-                            setState(() => _showConfirmar = !_showConfirmar),
-                        onCepChanged: (v) => _onCepChanged(v, vm),
-                        onNext: _onNext,
-                        onSubmit: _onSubmit,
-                        onPrev: () => vm.prevStep(),
+                          vm: vm,
+                          nomeCtrl: _nomeCtrl,
+                          emailCtrl: _emailCtrl,
+                          cpfCnpjCtrl: _cpfCnpjCtrl,
+                          telefoneCtrl: _telefoneCtrl,
+                          telefoneContatoCtrl: _telefoneContatoCtrl,
+                          cepCtrl: _cepCtrl,
+                          logradouroCtrl: _logradouroCtrl,
+                          numeroCtrl: _numeroCtrl,
+                          complementoCtrl: _complementoCtrl,
+                          bairroCtrl: _bairroCtrl,
+                          cidadeCtrl: _cidadeCtrl,
+                          estadoCtrl: _estadoCtrl,
+                          descricaoCtrl: _descricaoCtrl,
+                          senhaCtrl: _senhaCtrl,
+                          confirmarSenhaCtrl: _confirmarSenhaCtrl,
+                          cpfMask: _cpfMask,
+                          cnpjMask: _cnpjMask,
+                          telefoneMask: _telefoneMask,
+                          cepMask: _cepMask,
+                          showPassword: _showPassword,
+                          showConfirmar: _showConfirmar,
+                          onTogglePassword: () =>
+                              setState(() => _showPassword = !_showPassword),
+                          onToggleConfirmar: () =>
+                              setState(() => _showConfirmar = !_showConfirmar),
+                          onCepChanged: (v) => _onCepChanged(v, vm),
+                          onNext: _onNext,
+                          onSubmit: _onSubmit,
+                          onPrev: () => vm.prevStep(),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
               ),
               const AppFooter(),
             ],
@@ -299,10 +299,7 @@ class _UnifiedFormCard extends StatelessWidget {
             ProgressStepper(
               currentStep: vm.currentStep,
               totalSteps: 2,
-              stepLabels: const [
-                'Dados da organização',
-                'Sobre a organização',
-              ],
+              stepLabels: const ['Dados da organização', 'Sobre a organização'],
             ),
             if (vm.error != null) ...[
               const SizedBox(height: 20),

@@ -52,7 +52,8 @@ class PetModel {
       descricao: json['descricao'],
       temperamento: json['temperamento'],
       status: json['status'],
-      fotosUrls: (json['fotosUrls'] as List<dynamic>?)
+      fotosUrls:
+          (json['fotosUrls'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           [],

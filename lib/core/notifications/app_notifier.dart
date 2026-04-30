@@ -8,7 +8,7 @@ class AppNotification {
   final String message;
 
   AppNotification(this.kind, this.message)
-      : id = DateTime.now().microsecondsSinceEpoch.toString();
+    : id = DateTime.now().microsecondsSinceEpoch.toString();
 }
 
 /// Notificações globais que aparecem no canto superior direito.
