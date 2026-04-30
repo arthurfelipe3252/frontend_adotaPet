@@ -30,7 +30,7 @@ class FileUploadCard extends StatelessWidget {
   });
 
   Future<void> _pick() async {
-    final result = await FilePicker.pickFiles(
+    final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: allowedExtensions,
       withData: true,

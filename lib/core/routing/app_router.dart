@@ -2,11 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:adota_pet/presentation/pages/desktop/_auth_hero_panel.dart';
 import 'package:adota_pet/presentation/pages/desktop/forgot_password_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/home_placeholder_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/login_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/register_protetor_ong_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/splash_page.dart';
+import 'package:adota_pet/presentation/pages/org_pet_list_page.dart';
+import 'package:adota_pet/presentation/pages/pet_form_page.dart';
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
 
 GoRouter buildAppRouter(AuthViewModel auth) {
@@ -21,18 +24,24 @@ GoRouter buildAppRouter(AuthViewModel auth) {
       }
 
       if (loc == '/splash') {
-        return auth.isAuthenticated ? '/home' : '/login';
+        return auth.isAuthenticated ? '/pets' : '/login';
       }
 
       final isAuthRoute =
           loc == '/login' ||
           loc == '/register-org' ||
           loc == '/forgot-password';
+
       if (auth.isAuthenticated && isAuthRoute) {
-        return '/home';
+        return '/pets';
       }
 
-      if (!auth.isAuthenticated && loc == '/home') {
+      final isProtectedRoute =
+          loc == '/pets' ||
+          loc == '/pets/new' ||
+          loc.startsWith('/pets/');
+
+      if (!auth.isAuthenticated && isProtectedRoute) {
         return '/login';
       }
 
@@ -58,11 +67,23 @@ GoRouter buildAppRouter(AuthViewModel auth) {
             ? const ForgotPasswordPage()
             : const _MobilePlaceholder(message: 'Em breve'),
       ),
+      // Rota legada de home — redireciona para /pets
       GoRoute(
         path: '/home',
-        builder: (_, _) => kIsWeb
-            ? const HomePlaceholderPage()
-            : const _MobilePlaceholder(message: 'Home mobile em breve'),
+        redirect: (_, _) => '/pets',
+      ),
+      // ── Módulo de Pets ────────────────────────────────────────────────────
+      GoRoute(
+        path: '/pets',
+        builder: (_, _) => const OrgPetListPage(),
+      ),
+      GoRoute(
+        path: '/pets/new',
+        builder: (_, _) => const PetFormPage(),
+      ),
+      GoRoute(
+        path: '/pets/:id',
+        builder: (_, state) => PetFormPage(petId: state.pathParameters['id']),
       ),
     ],
   );
