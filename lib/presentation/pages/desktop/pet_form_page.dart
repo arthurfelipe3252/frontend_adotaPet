@@ -3,9 +3,8 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/pet_viewmodel.dart';
-import '../widgets/org_layout.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:adota_pet/presentation/viewmodels/pet_viewmodel.dart';
+import 'package:adota_pet/presentation/widgets/org_layout.dart';
 
 class PetFormPage extends StatefulWidget {
   final String? petId;

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/pet_viewmodel.dart';
-import '../widgets/org_layout.dart';
-import '../widgets/pet_list_card.dart';
-import 'pet_form_page.dart';
+import 'package:adota_pet/presentation/viewmodels/pet_viewmodel.dart';
+import 'package:adota_pet/presentation/widgets/org_layout.dart';
+import 'package:adota_pet/presentation/widgets/pet_list_card.dart';
+import 'package:adota_pet/presentation/pages/desktop/pet_form_page.dart';
 
 class OrgPetListPage extends StatefulWidget {
   const OrgPetListPage({super.key});

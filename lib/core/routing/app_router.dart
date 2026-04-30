@@ -8,8 +8,8 @@ import 'package:adota_pet/presentation/pages/desktop/home_placeholder_page.dart'
 import 'package:adota_pet/presentation/pages/desktop/login_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/register_protetor_ong_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/splash_page.dart';
-import 'package:adota_pet/presentation/pages/org_pet_list_page.dart';
-import 'package:adota_pet/presentation/pages/pet_form_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/org_pet_list_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/pet_form_page.dart';
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
 
 GoRouter buildAppRouter(AuthViewModel auth) {
@@ -24,7 +24,7 @@ GoRouter buildAppRouter(AuthViewModel auth) {
       }
 
       if (loc == '/splash') {
-        return auth.isAuthenticated ? '/pets' : '/login';
+        return auth.isAuthenticated ? '/home' : '/login';
       }
 
       final isAuthRoute =
@@ -33,10 +33,11 @@ GoRouter buildAppRouter(AuthViewModel auth) {
           loc == '/forgot-password';
 
       if (auth.isAuthenticated && isAuthRoute) {
-        return '/pets';
+        return '/home';
       }
 
       final isProtectedRoute =
+          loc == '/home' ||
           loc == '/pets' ||
           loc == '/pets/new' ||
           loc.startsWith('/pets/');
@@ -48,38 +49,39 @@ GoRouter buildAppRouter(AuthViewModel auth) {
       return null;
     },
     routes: [
-      GoRoute(path: '/splash', builder: (_, _) => const SplashPage()),
+      GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
       GoRoute(
         path: '/login',
-        builder: (_, _) => kIsWeb
+        builder: (_, __) => kIsWeb
             ? const LoginPage()
             : const _MobilePlaceholder(message: 'Login mobile em breve'),
       ),
       GoRoute(
         path: '/register-org',
-        builder: (_, _) => kIsWeb
+        builder: (_, __) => kIsWeb
             ? const RegisterProtetorOngPage()
             : const _MobilePlaceholder(message: 'Cadastro mobile em breve'),
       ),
       GoRoute(
         path: '/forgot-password',
-        builder: (_, _) => kIsWeb
+        builder: (_, __) => kIsWeb
             ? const ForgotPasswordPage()
             : const _MobilePlaceholder(message: 'Em breve'),
       ),
-      // Rota legada de home — redireciona para /pets
       GoRoute(
         path: '/home',
-        redirect: (_, _) => '/pets',
+        builder: (_, __) => kIsWeb
+          ? const HomePlaceholderPage()
+          : const _MobilePlaceholder(message: 'Home mobile em breve'),
       ),
       // ── Módulo de Pets ────────────────────────────────────────────────────
       GoRoute(
         path: '/pets',
-        builder: (_, _) => const OrgPetListPage(),
+        builder: (_, __) => const OrgPetListPage(),
       ),
       GoRoute(
         path: '/pets/new',
-        builder: (_, _) => const PetFormPage(),
+        builder: (_, __) => const PetFormPage(),
       ),
       GoRoute(
         path: '/pets/:id',
