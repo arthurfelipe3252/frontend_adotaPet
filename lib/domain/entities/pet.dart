@@ -39,8 +39,8 @@ class Pet {
     final anos = idadeMeses ~/ 12;
     final meses = idadeMeses % 12;
     if (anos > 0 && meses > 0) return '${anos}a ${meses}m';
-    if (anos > 0) return '${anos} ${anos == 1 ? 'ano' : 'anos'}';
-    return '${meses} ${meses == 1 ? 'mês' : 'meses'}';
+    if (anos > 0) return '$anos ${anos == 1 ? 'ano' : 'anos'}';
+    return '$meses ${meses == 1 ? 'mês' : 'meses'}';
   }
 
   String get especieLabel {

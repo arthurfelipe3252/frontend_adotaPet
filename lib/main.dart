@@ -23,6 +23,8 @@ import 'presentation/viewmodels/auth_viewmodel.dart';
 import 'presentation/viewmodels/forgot_password_viewmodel.dart';
 import 'presentation/viewmodels/pet_viewmodel.dart';
 import 'presentation/viewmodels/register_protetor_ong_viewmodel.dart';
+import 'presentation/viewmodels/user_settings_viewmodel.dart';
+import 'presentation/widgets/app_notifications_host.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,11 +68,16 @@ Future<void> main() async {
           ),
         ),
 
-        ChangeNotifierProvider(
-          create: (_) => ForgotPasswordViewModel(),
-        ),
+        ChangeNotifierProvider(create: (_) => ForgotPasswordViewModel()),
 
         ChangeNotifierProvider<PetViewModel>.value(value: petViewModel),
+
+        ChangeNotifierProvider(
+          create: (_) => UserSettingsViewModel(
+            usersRepository: usersRepository,
+            cepRepository: cepRepository,
+          ),
+        ),
       ],
       child: AdotaPetApp(authViewModel: authViewModel),
     ),
@@ -91,6 +98,9 @@ class AdotaPetApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       routerConfig: router,
+      builder: (context, child) {
+        return AppNotificationsHost(child: child ?? const SizedBox.shrink());
+      },
     );
   }
 }

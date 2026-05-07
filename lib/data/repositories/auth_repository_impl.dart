@@ -84,6 +84,17 @@ class AuthRepositoryImpl implements AuthRepository {
     httpClient.setAccessToken(null);
   }
 
+  @override
+  Future<void> logoutAll() async {
+    try {
+      await remote.logoutAll();
+    } catch (_) {
+      // Best-effort: mesmo se o backend falhar, a sessão local é encerrada.
+    }
+    await cache.clear();
+    httpClient.setAccessToken(null);
+  }
+
   Future<void> _persistSession(AuthSession session) async {
     await cache.save(session);
     httpClient.setAccessToken(session.accessToken);
