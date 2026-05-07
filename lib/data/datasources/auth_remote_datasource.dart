@@ -51,4 +51,8 @@ class AuthRemoteDatasource {
       data: {'refreshToken': refreshToken},
     );
   }
+
+  Future<void> logoutAll() async {
+    await client.post('/users/auth/logout-all');
+  }
 }

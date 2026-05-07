@@ -163,7 +163,7 @@ class _OrgPetListPageState extends State<OrgPetListPage> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               itemCount: _filters.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (_, i) {
                 final f = _filters[i];
                 final isActive = vm.activeFilter == f;
