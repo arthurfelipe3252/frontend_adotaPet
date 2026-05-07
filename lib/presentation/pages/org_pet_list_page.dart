@@ -134,8 +134,9 @@ class _OrgPetListPageState extends State<OrgPetListPage> {
                         context,
                         MaterialPageRoute(builder: (_) => const PetFormPage()),
                       );
-                      if (context.mounted)
+                      if (context.mounted) {
                         context.read<PetViewModel>().loadPets();
+                      }
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 12),

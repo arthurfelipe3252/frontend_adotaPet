@@ -2,9 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:adota_pet/presentation/pages/desktop/_auth_hero_panel.dart';
 import 'package:adota_pet/presentation/pages/desktop/forgot_password_page.dart';
-import 'package:adota_pet/presentation/pages/desktop/home_placeholder_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/login_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/register_protetor_ong_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/splash_page.dart';

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:adota_pet/presentation/pages/settings_page.dart';
 import 'package:adota_pet/domain/entities/user.dart';
 import 'package:network_image_mock/network_image_mock.dart';
-import 'dart:io';
 
 void main() {
   testWidgets('SettingsPage exibe opçoes corretas para ONG', (

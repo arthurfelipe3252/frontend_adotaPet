@@ -35,12 +35,14 @@ class PetRepositoryImpl implements PetRepository {
             return 'Dados inválidos. Verifique os campos preenchidos.';
           }
           if (status == 401) return 'Sessão expirada. Faça login novamente.';
-          if (status == 403)
+          if (status == 403) {
             return 'Você não tem permissão para realizar esta ação.';
+          }
           if (status == 404) return 'Registro não encontrado.';
           if (status == 409) return 'Conflito: este registro já existe.';
-          if (status != null && status >= 500)
+          if (status != null && status >= 500) {
             return 'Erro interno do servidor. Tente novamente mais tarde.';
+          }
           return fallback;
         default:
           return fallback;
