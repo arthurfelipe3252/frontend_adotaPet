@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
 
 class OrgLayout extends StatelessWidget {
   final Widget child;
@@ -13,11 +17,23 @@ class OrgLayout extends StatelessWidget {
   });
 
   static const _navItems = [
-    _NavItem(icon: Icons.bar_chart_rounded, label: 'Painel', route: '/org/dashboard'),
-    _NavItem(icon: Icons.pets_rounded, label: 'Meus Pets', route: '/org/pets'),
-    _NavItem(icon: Icons.assignment_rounded, label: 'Solicitações', route: '/org/requests'),
-    _NavItem(icon: Icons.calendar_month_rounded, label: 'Feiras', route: '/org/events'),
-    _NavItem(icon: Icons.person_rounded, label: 'Perfil', route: '/org/profile'),
+    _NavItem(icon: Icons.bar_chart_rounded, label: 'Painel', route: '/home'),
+    _NavItem(icon: Icons.pets_rounded, label: 'Meus Pets', route: '/pets'),
+    _NavItem(
+      icon: Icons.assignment_rounded,
+      label: 'Solicitações',
+      route: '/org/requests',
+    ),
+    _NavItem(
+      icon: Icons.calendar_month_rounded,
+      label: 'Feiras',
+      route: '/org/events',
+    ),
+    _NavItem(
+      icon: Icons.settings_rounded,
+      label: 'Config.',
+      route: '/settings',
+    ),
   ];
 
   @override
@@ -32,7 +48,10 @@ class OrgLayout extends StatelessWidget {
                 child: SafeArea(
                   bottom: false,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -60,9 +79,10 @@ class OrgLayout extends StatelessWidget {
                           ],
                         ),
                         TextButton(
-                          onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                            context, '/login', (_) => false,
-                          ),
+                          onPressed: () async {
+                            await context.read<AuthViewModel>().logout();
+                            if (context.mounted) context.go('/login');
+                          },
                           child: const Text(
                             'Sair',
                             style: TextStyle(
@@ -97,12 +117,15 @@ class OrgLayout extends StatelessWidget {
                 return GestureDetector(
                   onTap: () {
                     if (!isActive) {
-                      Navigator.pushReplacementNamed(context, item.route);
+                      context.go(item.route);
                     }
                   },
                   child: Container(
                     color: Colors.transparent,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -141,5 +164,9 @@ class _NavItem {
   final IconData icon;
   final String label;
   final String route;
-  const _NavItem({required this.icon, required this.label, required this.route});
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.route,
+  });
 }

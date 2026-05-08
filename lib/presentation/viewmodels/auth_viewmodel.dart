@@ -73,6 +73,30 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> logoutAll() async {
+    try {
+      await repository.logoutAll();
+    } catch (_) {
+      // Best-effort.
+    }
+    session = null;
+    error = null;
+    fieldErrors = {};
+    notifyListeners();
+  }
+
+  void updateUsuario(Usuario usuario) {
+    final current = session;
+    if (current == null) return;
+    session = AuthSession(
+      accessToken: current.accessToken,
+      refreshToken: current.refreshToken,
+      expiresAt: current.expiresAt,
+      usuario: usuario,
+    );
+    notifyListeners();
+  }
+
   void clearError() {
     if (error == null && fieldErrors.isEmpty) return;
     error = null;

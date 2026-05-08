@@ -89,8 +89,9 @@ class _PetFormPageState extends State<PetFormPage> {
 
   void _toggleTemp(String t) {
     setState(() {
-      if (_selectedTemps.contains(t)) _selectedTemps.remove(t);
-      else if (_selectedTemps.length < 6) _selectedTemps.add(t);
+      if (_selectedTemps.contains(t)) {
+        _selectedTemps.remove(t);
+      } else if (_selectedTemps.length < 6) _selectedTemps.add(t);
     });
   }
 
@@ -636,7 +637,7 @@ class _ToggleRow extends StatelessWidget {
       decoration: BoxDecoration(color: const Color(0xFFEEEAE6), borderRadius: BorderRadius.circular(12)),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A))),
-        Switch(value: value, onChanged: onChanged, activeColor: const Color(0xFFCC6633)),
+        Switch(value: value, onChanged: onChanged, activeThumbColor: const Color(0xFFCC6633)),
       ]),
     );
   }

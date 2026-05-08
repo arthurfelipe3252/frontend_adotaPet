@@ -29,7 +29,15 @@ class HomePlaceholderPage extends StatelessWidget {
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.only(left: 16),
+            child: TextButton.icon(
+              onPressed: () => context.go('/settings'),
+              icon: const Icon(Icons.settings_rounded, size: 18),
+              label: const Text('Configurações'),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
             child: TextButton.icon(
               onPressed: () async {
                 await context.read<AuthViewModel>().logout();

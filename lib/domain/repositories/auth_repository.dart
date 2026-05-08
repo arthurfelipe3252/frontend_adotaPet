@@ -16,4 +16,7 @@ abstract class AuthRepository {
 
   /// Encerra a sessão local e revoga o refresh token no backend (best-effort).
   Future<void> logout();
+
+  /// Encerra todas as sessões do usuário autenticado.
+  Future<void> logoutAll();
 }

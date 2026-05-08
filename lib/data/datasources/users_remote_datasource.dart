@@ -3,8 +3,10 @@ import 'package:dio/dio.dart';
 import 'package:adota_pet/core/errors/failure.dart';
 import 'package:adota_pet/core/network/http_client.dart';
 import 'package:adota_pet/data/datasources/_dio_error_helper.dart';
+import 'package:adota_pet/data/models/adotante_model.dart';
 import 'package:adota_pet/data/models/criar_protetor_ong_request_model.dart';
 import 'package:adota_pet/data/models/protetor_ong_model.dart';
+import 'package:adota_pet/data/models/user_settings_request_model.dart';
 
 class UsersRemoteDatasource {
   final HttpClient client;
@@ -48,6 +50,86 @@ class UsersRemoteDatasource {
           401: 'Sua sessão expirou. Faça login novamente.',
           403: 'Acesso negado a este perfil.',
           404: 'Perfil não encontrado.',
+        },
+      );
+    }
+  }
+
+  Future<AdotanteResponseModel> getMeAdotante() async {
+    try {
+      final response = await client.get('/users/adotantes/me');
+      return AdotanteResponseModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      throw failureFromDio(
+        e,
+        customByStatus: {
+          401: 'Sua sessão expirou. Faça login novamente.',
+          403: 'Acesso negado a este perfil.',
+          404: 'Perfil não encontrado.',
+        },
+      );
+    }
+  }
+
+  Future<AdotanteResponseModel> atualizarAdotante(
+    AtualizarAdotanteRequestModel request,
+  ) async {
+    try {
+      final response = await client.patch(
+        '/users/adotantes/me',
+        data: request.toJson(),
+      );
+      return AdotanteResponseModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      throw failureFromDio(
+        e,
+        customByStatus: {
+          400: 'Verifique os dados informados.',
+          401: 'Sua sessão expirou. Faça login novamente.',
+          403: 'Acesso negado a este perfil.',
+          404: 'Perfil não encontrado.',
+        },
+      );
+    }
+  }
+
+  Future<ProtetorOngResponseModel> atualizarProtetorOng(
+    AtualizarProtetorOngRequestModel request,
+  ) async {
+    try {
+      final response = await client.patch(
+        '/users/protetores-ongs/me',
+        data: request.toJson(),
+      );
+      return ProtetorOngResponseModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      throw failureFromDio(
+        e,
+        customByStatus: {
+          400: 'Verifique os dados informados.',
+          401: 'Sua sessão expirou. Faça login novamente.',
+          403: 'Acesso negado a este perfil.',
+          404: 'Perfil não encontrado.',
+        },
+      );
+    }
+  }
+
+  Future<void> alterarSenha(AlterarSenhaRequestModel request) async {
+    try {
+      await client.patch('/users/me/password', data: request.toJson());
+    } on DioException catch (e) {
+      throw failureFromDio(
+        e,
+        customByStatus: {
+          400: 'Verifique a nova senha.',
+          401: 'Senha atual incorreta ou sessão expirada.',
         },
       );
     }
