@@ -13,22 +13,22 @@ class PetStatusBadge extends StatelessWidget {
 
     switch (status) {
       case 'disponivel':
-        bg = const Color(0xFF2E7D32).withOpacity(0.12);
+        bg = const Color(0xFF2E7D32);
         fg = const Color(0xFF2E7D32);
         label = 'Disponível';
         break;
       case 'em_processo':
-        bg = const Color(0xFFF59E0B).withOpacity(0.15);
+        bg = const Color(0xFFF59E0B);
         fg = const Color(0xFFF59E0B);
         label = 'Em processo';
         break;
       case 'adotado':
-        bg = const Color(0xFF1E88E5).withOpacity(0.12);
+        bg = const Color(0xFF1E88E5);
         fg = const Color(0xFF1E88E5);
         label = 'Adotado';
         break;
       default:
-        bg = Colors.grey.withOpacity(0.12);
+        bg = Colors.grey;
         fg = Colors.grey;
         label = status;
     }
@@ -65,7 +65,7 @@ class PetListCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black,
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
