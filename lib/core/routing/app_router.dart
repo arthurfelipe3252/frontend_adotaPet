@@ -9,6 +9,7 @@ import 'package:adota_pet/presentation/pages/desktop/register_protetor_ong_page.
 import 'package:adota_pet/presentation/pages/desktop/splash_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/org_pet_list_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/pet_form_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/adoption_request_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/user_settings_page.dart';
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
 
@@ -91,7 +92,14 @@ GoRouter buildAppRouter(AuthViewModel auth) {
       GoRoute(path: '/org/dashboard', redirect: (_, _) => '/home'),
       GoRoute(path: '/org/profile', redirect: (_, _) => '/settings'),
       GoRoute(path: '/org/pets', redirect: (_, _) => '/pets'),
-      GoRoute(path: '/org/requests', redirect: (_, _) => '/home'),
+      GoRoute(
+        path: '/org/requests',
+        builder: (_, _) => kIsWeb
+            ? const AdoptionRequestPage()
+            : const _MobilePlaceholder(
+                message: 'Solicitações mobile em breve',
+              ),
+      ),
       GoRoute(path: '/org/events', redirect: (_, _) => '/home'),
       // ── Módulo de Pets ────────────────────────────────────────────────────
       GoRoute(path: '/pets', builder: (_, _) => const OrgPetListPage()),

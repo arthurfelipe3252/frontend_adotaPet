@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:adota_pet/domain/entities/adoption_request.dart';
 import 'package:adota_pet/presentation/viewmodels/adoption_request_viewmodel.dart';
+import 'package:adota_pet/presentation/widgets/org_layout.dart';
 
 class AdoptionRequestPage extends StatefulWidget {
   const AdoptionRequestPage({super.key});
@@ -21,45 +22,60 @@ class _AdoptionRequestPageState extends State<AdoptionRequestPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Solicitações de Adoção'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: Consumer<AdoptionRequestViewmodel>(
-        builder: (context, vm, _) {
-          if (vm.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (vm.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(vm.error!, style: const TextStyle(color: Colors.red)),
-                  const SizedBox(height: 12),
-                  ElevatedButton(onPressed: vm.loadAll, child: const Text('Tentar novamente')),
-                ],
+    return OrgLayout(
+      title: 'Solicitações de Adoção',
+      currentIndex: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.icon(
+                onPressed: () => _showCreateDialog(context),
+                icon: const Icon(Icons.add_rounded, size: 20),
+                label: const Text('Nova solicitação'),
               ),
-            );
-          }
-          if (vm.requests.isEmpty) {
-            return const Center(child: Text('Nenhuma solicitação encontrada.'));
-          }
-          return RefreshIndicator(
-            onRefresh: vm.loadAll,
-            child: ListView.builder(
-              itemCount: vm.requests.length,
-              padding: const EdgeInsets.all(12),
-              itemBuilder: (context, index) =>
-                  _AdoptionRequestCard(request: vm.requests[index]),
             ),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showCreateDialog(context),
-        child: const Icon(Icons.add),
+          ),
+          Expanded(
+            child: Consumer<AdoptionRequestViewmodel>(
+              builder: (context, vm, _) {
+                if (vm.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (vm.error != null) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(vm.error!, style: const TextStyle(color: Colors.red)),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: vm.loadAll,
+                          child: const Text('Tentar novamente'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                if (vm.requests.isEmpty) {
+                  return const Center(child: Text('Nenhuma solicitação encontrada.'));
+                }
+                return RefreshIndicator(
+                  onRefresh: vm.loadAll,
+                  child: ListView.builder(
+                    itemCount: vm.requests.length,
+                    padding: const EdgeInsets.all(12),
+                    itemBuilder: (context, index) =>
+                        _AdoptionRequestCard(request: vm.requests[index]),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
