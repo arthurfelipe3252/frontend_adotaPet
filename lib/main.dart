@@ -23,6 +23,7 @@ import 'presentation/viewmodels/auth_viewmodel.dart';
 import 'presentation/viewmodels/forgot_password_viewmodel.dart';
 import 'presentation/viewmodels/pet_viewmodel.dart';
 import 'presentation/viewmodels/register_protetor_ong_viewmodel.dart';
+import 'presentation/viewmodels/catalog_viewmodel.dart';
 import 'presentation/viewmodels/user_settings_viewmodel.dart';
 import 'presentation/widgets/app_notifications_host.dart';
 
@@ -71,6 +72,10 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ForgotPasswordViewModel()),
 
         ChangeNotifierProvider<PetViewModel>.value(value: petViewModel),
+
+        ChangeNotifierProvider(
+          create: (_) => CatalogViewModel(petRepository),
+        ),
 
         ChangeNotifierProvider(
           create: (_) => UserSettingsViewModel(
