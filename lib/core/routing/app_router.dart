@@ -10,6 +10,8 @@ import 'package:adota_pet/presentation/pages/desktop/splash_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/org_pet_list_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/pet_form_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/user_settings_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/catalog_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/pet_detail_page.dart';
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
 
 GoRouter buildAppRouter(AuthViewModel auth) {
@@ -24,7 +26,7 @@ GoRouter buildAppRouter(AuthViewModel auth) {
       }
 
       if (loc == '/splash') {
-        return auth.isAuthenticated ? '/home' : '/login';
+        return auth.isAuthenticated ? '/home' : (kIsWeb ? '/login' : '/catalog');
       }
 
       final isAuthRoute =
@@ -32,73 +34,72 @@ GoRouter buildAppRouter(AuthViewModel auth) {
           loc == '/register-org' ||
           loc == '/forgot-password';
 
-      if (auth.isAuthenticated && isAuthRoute) {
-        return '/home';
-      }
+      if (auth.isAuthenticated && isAuthRoute) return '/home';
 
       final isProtectedRoute =
           loc == '/home' ||
           loc == '/settings' ||
-          loc == '/org/dashboard' ||
-          loc == '/org/profile' ||
-          loc == '/org/pets' ||
-          loc == '/org/requests' ||
-          loc == '/org/events' ||
+          loc.startsWith('/org/') ||
           loc == '/pets' ||
           loc == '/pets/new' ||
           loc.startsWith('/pets/');
 
-      if (!auth.isAuthenticated && isProtectedRoute) {
-        return '/login';
-      }
+      // Catálogo é público
+      if (loc == "/catalog" || loc.startsWith("/catalog/")) return null;
+
+      if (!auth.isAuthenticated && isProtectedRoute) return "/login";
 
       return null;
     },
     routes: [
-      GoRoute(path: '/splash', builder: (_, _) => const SplashPage()),
+      GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
       GoRoute(
         path: '/login',
-        builder: (_, _) => kIsWeb
+        builder: (_, __) => kIsWeb
             ? const LoginPage()
             : const _MobilePlaceholder(message: 'Login mobile em breve'),
       ),
       GoRoute(
         path: '/register-org',
-        builder: (_, _) => kIsWeb
+        builder: (_, __) => kIsWeb
             ? const RegisterProtetorOngPage()
             : const _MobilePlaceholder(message: 'Cadastro mobile em breve'),
       ),
       GoRoute(
         path: '/forgot-password',
-        builder: (_, _) => kIsWeb
+        builder: (_, __) => kIsWeb
             ? const ForgotPasswordPage()
             : const _MobilePlaceholder(message: 'Em breve'),
       ),
       GoRoute(
         path: '/home',
-        builder: (_, _) => kIsWeb
+        builder: (_, __) => kIsWeb
             ? const HomePlaceholderPage()
             : const _MobilePlaceholder(message: 'Home mobile em breve'),
       ),
       GoRoute(
         path: '/settings',
-        builder: (_, _) => kIsWeb
+        builder: (_, __) => kIsWeb
             ? const UserSettingsPage()
-            : const _MobilePlaceholder(
-                message: 'Configurações mobile em breve',
-              ),
+            : const _MobilePlaceholder(message: 'Configurações mobile em breve'),
       ),
-      GoRoute(path: '/org/dashboard', redirect: (_, _) => '/home'),
-      GoRoute(path: '/org/profile', redirect: (_, _) => '/settings'),
-      GoRoute(path: '/org/pets', redirect: (_, _) => '/pets'),
-      GoRoute(path: '/org/requests', redirect: (_, _) => '/home'),
-      GoRoute(path: '/org/events', redirect: (_, _) => '/home'),
-      // ── Módulo de Pets ────────────────────────────────────────────────────
-      GoRoute(path: '/pets', builder: (_, _) => const OrgPetListPage()),
-      GoRoute(path: '/pets/new', builder: (_, _) => const PetFormPage()),
+      GoRoute(path: '/org/dashboard', redirect: (_, __) => '/home'),
+      GoRoute(path: '/org/profile', redirect: (_, __) => '/settings'),
+      GoRoute(path: '/org/pets', redirect: (_, __) => '/pets'),
+      GoRoute(path: '/org/requests', redirect: (_, __) => '/home'),
+      GoRoute(path: '/org/events', redirect: (_, __) => '/home'),
+      // ── Módulo de Pets (ONG) ──────────────────────────────────────────────
+      GoRoute(path: '/pets', builder: (_, __) => const OrgPetListPage()),
+      GoRoute(path: '/pets/new', builder: (_, __) => const PetFormPage()),
       GoRoute(
         path: '/pets/:id',
         builder: (_, state) => PetFormPage(petId: state.pathParameters['id']),
+      ),
+      // ── Catálogo público ──────────────────────────────────────────────────
+      GoRoute(path: '/catalog', builder: (_, __) => const CatalogPage()),
+      GoRoute(
+        path: '/catalog/:id',
+        builder: (_, state) => PetDetailPage(petId: state.pathParameters['id']!),
       ),
     ],
   );
@@ -106,7 +107,6 @@ GoRouter buildAppRouter(AuthViewModel auth) {
 
 class _MobilePlaceholder extends StatelessWidget {
   final String message;
-
   const _MobilePlaceholder({required this.message});
 
   @override
@@ -120,11 +120,8 @@ class _MobilePlaceholder extends StatelessWidget {
             children: [
               const Text('🐾', style: TextStyle(fontSize: 56)),
               const SizedBox(height: 16),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
+              Text(message, textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineSmall),
             ],
           ),
         ),
