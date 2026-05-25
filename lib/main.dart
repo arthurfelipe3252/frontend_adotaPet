@@ -22,6 +22,7 @@ import 'data/repositories/users_repository_impl.dart';
 import 'presentation/viewmodels/auth_viewmodel.dart';
 import 'presentation/viewmodels/forgot_password_viewmodel.dart';
 import 'presentation/viewmodels/pet_viewmodel.dart';
+import 'presentation/viewmodels/register_adotante_viewmodel.dart';
 import 'presentation/viewmodels/register_protetor_ong_viewmodel.dart';
 import 'presentation/viewmodels/catalog_viewmodel.dart';
 import 'presentation/viewmodels/user_settings_viewmodel.dart';
@@ -64,6 +65,13 @@ Future<void> main() async {
 
         ChangeNotifierProvider(
           create: (_) => RegisterProtetorOngViewModel(
+            usersRepository: usersRepository,
+            cepRepository: cepRepository,
+          ),
+        ),
+
+        ChangeNotifierProvider(
+          create: (_) => RegisterAdotanteViewModel(
             usersRepository: usersRepository,
             cepRepository: cepRepository,
           ),

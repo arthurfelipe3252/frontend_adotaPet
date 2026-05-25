@@ -12,6 +12,9 @@ import 'package:adota_pet/presentation/pages/desktop/pet_form_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/user_settings_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/catalog_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/pet_detail_page.dart';
+import 'package:adota_pet/presentation/pages/mobile/login_page.dart' as mobile;
+import 'package:adota_pet/presentation/pages/mobile/register_adotante_page.dart'
+    as mobile;
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
 
 GoRouter buildAppRouter(AuthViewModel auth) {
@@ -26,28 +29,19 @@ GoRouter buildAppRouter(AuthViewModel auth) {
       }
 
       if (loc == '/splash') {
-        return auth.isAuthenticated ? '/home' : (kIsWeb ? '/login' : '/catalog');
+        return auth.isAuthenticated ? '/home' : '/login';
       }
 
       final isAuthRoute =
           loc == '/login' ||
           loc == '/register-org' ||
+          loc == '/register-adotante' ||
           loc == '/forgot-password';
 
       if (auth.isAuthenticated && isAuthRoute) return '/home';
 
-      final isProtectedRoute =
-          loc == '/home' ||
-          loc == '/settings' ||
-          loc.startsWith('/org/') ||
-          loc == '/pets' ||
-          loc == '/pets/new' ||
-          loc.startsWith('/pets/');
-
-      // Catálogo é público
-      if (loc == "/catalog" || loc.startsWith("/catalog/")) return null;
-
-      if (!auth.isAuthenticated && isProtectedRoute) return "/login";
+      // Todas as demais rotas exigem login.
+      if (!auth.isAuthenticated && !isAuthRoute) return '/login';
 
       return null;
     },
@@ -55,15 +49,26 @@ GoRouter buildAppRouter(AuthViewModel auth) {
       GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
       GoRoute(
         path: '/login',
-        builder: (_, __) => kIsWeb
-            ? const LoginPage()
-            : const _MobilePlaceholder(message: 'Login mobile em breve'),
+        builder: (_, __) =>
+            kIsWeb ? const LoginPage() : const mobile.LoginPage(),
       ),
       GoRoute(
         path: '/register-org',
         builder: (_, __) => kIsWeb
             ? const RegisterProtetorOngPage()
-            : const _MobilePlaceholder(message: 'Cadastro mobile em breve'),
+            : const _MobilePlaceholder(
+                message:
+                    'O cadastro de ONG/Protetor está disponível apenas na versão web.',
+              ),
+      ),
+      GoRoute(
+        path: '/register-adotante',
+        builder: (_, __) => kIsWeb
+            ? const _MobilePlaceholder(
+                message:
+                    'O cadastro de adotante está disponível apenas no app mobile.',
+              )
+            : const mobile.RegisterAdotantePage(),
       ),
       GoRoute(
         path: '/forgot-password',

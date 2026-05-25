@@ -1,8 +1,10 @@
 import 'package:adota_pet/core/errors/failure.dart';
 import 'package:adota_pet/data/datasources/users_remote_datasource.dart';
+import 'package:adota_pet/data/models/criar_adotante_request_model.dart';
+import 'package:adota_pet/data/models/criar_protetor_ong_request_model.dart';
 import 'package:adota_pet/data/models/user_settings_request_model.dart';
 import 'package:adota_pet/domain/entities/adotante.dart';
-import 'package:adota_pet/data/models/criar_protetor_ong_request_model.dart';
+import 'package:adota_pet/domain/entities/criar_adotante_params.dart';
 import 'package:adota_pet/domain/entities/criar_protetor_ong_params.dart';
 import 'package:adota_pet/domain/entities/protetor_ong.dart';
 import 'package:adota_pet/domain/entities/user_settings_params.dart';
@@ -29,6 +31,24 @@ class UsersRepositoryImpl implements UsersRepository {
         throw Failure('CPF/CNPJ já cadastrado.', field: 'cpfCnpj');
       }
       throw Failure('Email ou CPF/CNPJ já cadastrado.');
+    }
+  }
+
+  @override
+  Future<Adotante> criarAdotante(CriarAdotanteParams params) async {
+    try {
+      final request = CriarAdotanteRequestModel.fromParams(params);
+      final model = await remote.criarAdotante(request);
+      return model.toEntity();
+    } on ConflictFailure catch (f) {
+      final lower = f.message.toLowerCase();
+      if (lower.contains('email')) {
+        throw Failure('Este email já está cadastrado.', field: 'email');
+      }
+      if (lower.contains('cpf')) {
+        throw Failure('CPF já cadastrado.', field: 'cpf');
+      }
+      throw Failure('Email ou CPF já cadastrado.');
     }
   }
 

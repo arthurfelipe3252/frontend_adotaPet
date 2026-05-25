@@ -49,7 +49,9 @@
       "Bash(chromedriver --version)",
       "Bash(flutter drive *)",
       "Bash(python -c ' *)",
-      "Bash(grep -E \"^\\(integration_test|test_driver\\)$\")"
+      "Bash(grep -E \"^\\(integration_test|test_driver\\)$\")",
+      "Bash(flutter doctor *)",
+      "Bash(flutter emulators *)"
     ]
   }
 }

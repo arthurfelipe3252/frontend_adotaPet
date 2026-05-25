@@ -29,7 +29,19 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> login(String email, String senha) async {
+  /// Faz login validando opcionalmente o tipo do usuário.
+  ///
+  /// Se `tiposPermitidos` for informado e o tipo do usuário autenticado não
+  /// estiver no conjunto, a sessão é encerrada e o login retorna `false` com
+  /// `mensagemTipoInvalido` exibida em `error`. Útil pra restringir o login
+  /// por plataforma (web só ONG/Protetor, mobile só Adotante).
+  Future<bool> login(
+    String email,
+    String senha, {
+    Set<String>? tiposPermitidos,
+    String mensagemTipoInvalido =
+        'Seu tipo de usuário não tem acesso a esta plataforma.',
+  }) async {
     isLoading = true;
     error = null;
     fieldErrors = {};
@@ -41,10 +53,11 @@ class AuthViewModel extends ChangeNotifier {
         senha: senha,
       );
 
-      if (restored.usuario.tipoUsuario == Usuario.tipoAdotante) {
+      if (tiposPermitidos != null &&
+          !tiposPermitidos.contains(restored.usuario.tipoUsuario)) {
         await repository.logout();
         session = null;
-        _setError(Failure('Esta área é exclusiva para protetores e ONGs.'));
+        _setError(Failure(mensagemTipoInvalido));
         return false;
       }
 

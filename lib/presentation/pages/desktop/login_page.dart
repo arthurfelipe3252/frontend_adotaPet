@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'package:adota_pet/core/platform/platform_info.dart';
 import 'package:adota_pet/core/theme/app_theme.dart';
+import 'package:adota_pet/domain/entities/usuario.dart';
 import 'package:adota_pet/presentation/pages/desktop/_auth_hero_panel.dart';
 import 'package:adota_pet/presentation/pages/desktop/_error_banner.dart';
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
@@ -32,7 +33,12 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _submit() async {
     final vm = context.read<AuthViewModel>();
-    final ok = await vm.login(_emailCtrl.text, _senhaCtrl.text);
+    final ok = await vm.login(
+      _emailCtrl.text,
+      _senhaCtrl.text,
+      tiposPermitidos: const {Usuario.tipoProtetor, Usuario.tipoOng},
+      mensagemTipoInvalido: 'Esta área é exclusiva para protetores e ONGs.',
+    );
     if (!mounted) return;
     if (ok) {
       context.go('/home');

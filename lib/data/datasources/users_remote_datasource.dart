@@ -4,6 +4,7 @@ import 'package:adota_pet/core/errors/failure.dart';
 import 'package:adota_pet/core/network/http_client.dart';
 import 'package:adota_pet/data/datasources/_dio_error_helper.dart';
 import 'package:adota_pet/data/models/adotante_model.dart';
+import 'package:adota_pet/data/models/criar_adotante_request_model.dart';
 import 'package:adota_pet/data/models/criar_protetor_ong_request_model.dart';
 import 'package:adota_pet/data/models/protetor_ong_model.dart';
 import 'package:adota_pet/data/models/user_settings_request_model.dart';
@@ -26,6 +27,29 @@ class UsersRemoteDatasource {
       );
     } on DioException catch (e) {
       // 409 vira ConflictFailure: o repository decide qual field destacar.
+      if (e.response?.statusCode == 409) {
+        final msg = extractBackendMessage(e.response?.data) ?? '';
+        throw ConflictFailure(msg);
+      }
+      throw failureFromDio(
+        e,
+        customByStatus: {400: 'Verifique os dados informados.'},
+      );
+    }
+  }
+
+  Future<AdotanteResponseModel> criarAdotante(
+    CriarAdotanteRequestModel request,
+  ) async {
+    try {
+      final response = await client.post(
+        '/users/adotantes',
+        data: request.toJson(),
+      );
+      return AdotanteResponseModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
       if (e.response?.statusCode == 409) {
         final msg = extractBackendMessage(e.response?.data) ?? '';
         throw ConflictFailure(msg);
