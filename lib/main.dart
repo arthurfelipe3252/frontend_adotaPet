@@ -7,6 +7,7 @@ import 'core/routing/app_router.dart';
 import 'core/storage/auth_storage.dart';
 import 'core/theme/app_theme.dart';
 
+import 'data/datasources/adoption_request_remote_datasource.dart';
 import 'data/datasources/auth_cache_datasource.dart';
 import 'data/datasources/auth_remote_datasource.dart';
 import 'data/datasources/cep_remote_datasource.dart';
@@ -14,11 +15,13 @@ import 'data/datasources/pet_cache_datasource.dart';
 import 'data/datasources/pet_remote_datasource.dart';
 import 'data/datasources/users_remote_datasource.dart';
 
+import 'data/repositories/adoption_request_repository_impl.dart';
 import 'data/repositories/auth_repository_impl.dart';
 import 'data/repositories/cep_repository_impl.dart';
 import 'data/repositories/pet_repository_impl.dart';
 import 'data/repositories/users_repository_impl.dart';
 
+import 'presentation/viewmodels/adoption_request_viewmodel.dart';
 import 'presentation/viewmodels/auth_viewmodel.dart';
 import 'presentation/viewmodels/forgot_password_viewmodel.dart';
 import 'presentation/viewmodels/pet_viewmodel.dart';
@@ -58,6 +61,12 @@ Future<void> main() async {
   final petRepository = PetRepositoryImpl(petRemote, petCache);
   final petViewModel = PetViewModel(petRepository);
 
+  final adoptionRequestRemote = AdoptionRequestRemoteDatasource(httpClient);
+  final adoptionRequestRepository =
+      AdoptionRequestRepositoryImpl(adoptionRequestRemote);
+  final adoptionRequestViewmodel =
+      AdoptionRequestViewmodel(adoptionRequestRepository);
+
   runApp(
     MultiProvider(
       providers: [
@@ -80,6 +89,10 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ForgotPasswordViewModel()),
 
         ChangeNotifierProvider<PetViewModel>.value(value: petViewModel),
+
+        ChangeNotifierProvider<AdoptionRequestViewmodel>.value(
+          value: adoptionRequestViewmodel,
+        ),
 
         ChangeNotifierProvider(
           create: (_) => CatalogViewModel(petRepository),

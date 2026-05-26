@@ -4,7 +4,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:adota_pet/presentation/viewmodels/pet_viewmodel.dart';
-import 'package:adota_pet/presentation/widgets/org_layout.dart';
 
 class PetFormPage extends StatefulWidget {
   final String? petId;
@@ -522,7 +521,7 @@ class _PetFormPageState extends State<PetFormPage> {
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(colors: [Color(0xFFCC6633), Color(0xFFE8923E)]),
                   borderRadius: BorderRadius.circular(14),
-                  boxShadow: [BoxShadow(color: const Color(0xFFCC6633).withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))],
+                  boxShadow: [BoxShadow(color: const Color(0xFFCC6633), blurRadius: 12, offset: const Offset(0, 4))],
                 ),
                 child: Center(child: vm.isSaving
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
@@ -549,7 +548,7 @@ class _Section extends StatelessWidget {
       width: double.infinity, padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white, borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black, blurRadius: 10, offset: const Offset(0, 2))],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text('$emoji $title', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFF1A1A1A))),
@@ -590,7 +589,7 @@ class _Input extends StatelessWidget {
         hintText: hint,
         hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
         filled: true,
-        fillColor: hasError ? Colors.red.withOpacity(0.05) : const Color(0xFFEEEAE6),
+        fillColor: hasError ? Colors.red : const Color(0xFFEEEAE6),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
           borderSide: hasError ? const BorderSide(color: Colors.red, width: 1.5) : BorderSide.none),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),

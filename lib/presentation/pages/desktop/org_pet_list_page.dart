@@ -128,7 +128,7 @@ class _OrgPetListPageState extends State<OrgPetListPage> {
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFCC6633).withOpacity(0.3),
+                            color: const Color(0xFFCC6633),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
