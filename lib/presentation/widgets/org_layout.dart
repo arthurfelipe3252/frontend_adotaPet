@@ -22,7 +22,7 @@ class OrgLayout extends StatelessWidget {
     _NavItem(
       icon: Icons.assignment_rounded,
       label: 'Solicitações',
-      route: '/org/requests',
+      route: '/adoptions',
     ),
     _NavItem(
       icon: Icons.calendar_month_rounded,
@@ -42,7 +42,7 @@ class OrgLayout extends StatelessWidget {
       backgroundColor: const Color(0xFFF7F3F0),
       appBar: title != null
           ? PreferredSize(
-              preferredSize: const Size.fromHeight(64),
+              preferredSize: const Size.fromHeight(72),
               child: Container(
                 color: Colors.white,
                 child: SafeArea(

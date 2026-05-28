@@ -5,9 +5,11 @@ abstract class AdoptionRequestRepository {
   Future<AdoptionRequest?> getById(String id);
   Future<AdoptionRequest> create({
     required String petId,
+    String? protetorId,
     required String adopterId,
-    String? notes,
+    String? mensagem,
     double? matchScore,
+    Map<String, dynamic>? questionario,
   });
   Future<AdoptionRequest> updateStatus(String id, String status);
   Future<void> delete(String id);

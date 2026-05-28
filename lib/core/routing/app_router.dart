@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_underscores
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -93,7 +95,7 @@ GoRouter buildAppRouter(AuthViewModel auth) {
       GoRoute(path: '/org/profile', redirect: (_, __) => '/settings'),
       GoRoute(path: '/org/pets', redirect: (_, __) => '/pets'),
       GoRoute(
-        path: '/org/requests',
+        path: '/adoptions',
         builder: (_, __) => kIsWeb
             ? const AdoptionRequestPage()
             : const _MobilePlaceholder(

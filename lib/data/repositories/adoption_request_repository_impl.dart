@@ -18,21 +18,28 @@ class AdoptionRequestRepositoryImpl implements AdoptionRequestRepository {
   @override
   Future<AdoptionRequest> create({
     required String petId,
+    String? protetorId,
     required String adopterId,
-    String? notes,
+    String? mensagem,
     double? matchScore,
+    Map<String, dynamic>? questionario,
   }) {
+    final scoreInt = matchScore != null ? matchScore.round() : null;
+
     return datasource.create({
       'petId': petId,
+      if (protetorId != null) 'protetorId': protetorId,
       'adopterId': adopterId,
-      if (notes != null) 'notes': notes,
-      if (matchScore != null) 'matchScore': matchScore,
+      if (mensagem != null && mensagem.isNotEmpty) 'mensagem': mensagem,
+      if (scoreInt != null) 'matchScore': scoreInt,
+      if (questionario != null) 'questionario': questionario,
     });
   }
 
   @override
-  Future<AdoptionRequest> updateStatus(String id, String status) => datasource.updateStatus(id, status);
+  Future<AdoptionRequest> updateStatus(String id, String status) =>
+      datasource.updateStatus(id, status);
 
   @override
   Future<void> delete(String id) => datasource.delete(id);
-} 
+}
