@@ -1,10 +1,4 @@
-enum FollowUpStatus {
-  emDia,
-  proximoVencimento,
-  atrasado,
-  pendente,
-  concluido,
-}
+enum FollowUpStatus { emDia, proximoVencimento, atrasado, pendente, concluido }
 
 class AdoptionFollowUp {
   final String id;

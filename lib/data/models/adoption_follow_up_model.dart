@@ -43,8 +43,8 @@ class AdoptionFollowUpModel {
       anuncianteNome: json['anuncianteNome'],
       anuncianteTipo: json['anuncianteTipo'],
       dataInicio: DateTime.parse(json['dataInicio']),
-      dataUltimaAtualizacao: json['dataUltimaAtualizacao'] != null 
-          ? DateTime.parse(json['dataUltimaAtualizacao']) 
+      dataUltimaAtualizacao: json['dataUltimaAtualizacao'] != null
+          ? DateTime.parse(json['dataUltimaAtualizacao'])
           : null,
       dataProximaAtualizacao: DateTime.parse(json['dataProximaAtualizacao']),
       status: json['status'],
@@ -54,12 +54,23 @@ class AdoptionFollowUpModel {
   AdoptionFollowUp toEntity() {
     FollowUpStatus entityStatus;
     switch (status) {
-      case 'EM_DIA': entityStatus = FollowUpStatus.emDia; break;
-      case 'PROXIMO_VENCIMENTO': entityStatus = FollowUpStatus.proximoVencimento; break;
-      case 'ATRASADO': entityStatus = FollowUpStatus.atrasado; break;
-      case 'PENDENTE': entityStatus = FollowUpStatus.pendente; break;
-      case 'CONCLUIDO': entityStatus = FollowUpStatus.concluido; break;
-      default: entityStatus = FollowUpStatus.emDia;
+      case 'EM_DIA':
+        entityStatus = FollowUpStatus.emDia;
+        break;
+      case 'PROXIMO_VENCIMENTO':
+        entityStatus = FollowUpStatus.proximoVencimento;
+        break;
+      case 'ATRASADO':
+        entityStatus = FollowUpStatus.atrasado;
+        break;
+      case 'PENDENTE':
+        entityStatus = FollowUpStatus.pendente;
+        break;
+      case 'CONCLUIDO':
+        entityStatus = FollowUpStatus.concluido;
+        break;
+      default:
+        entityStatus = FollowUpStatus.emDia;
     }
 
     return AdoptionFollowUp(

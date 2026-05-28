@@ -39,8 +39,10 @@ class _FollowUpReviewPageState extends State<FollowUpReviewPage> {
       currentIndex: 3,
       child: Consumer<FollowUpViewModel>(
         builder: (context, vm, child) {
-          if (vm.isLoading) return const Center(child: CircularProgressIndicator());
-          if (vm.selectedFollowUp == null) return const Center(child: Text('Acompanhamento não encontrado'));
+          if (vm.isLoading)
+            return const Center(child: CircularProgressIndicator());
+          if (vm.selectedFollowUp == null)
+            return const Center(child: Text('Acompanhamento não encontrado'));
 
           final f = vm.selectedFollowUp!;
 
@@ -73,7 +75,7 @@ class _FollowUpReviewPageState extends State<FollowUpReviewPage> {
                       return FollowUpTimelineItem(
                         update: update,
                         isLast: index == vm.updates.length - 1,
-                        onRespond: update.comentarioAnunciante == null 
+                        onRespond: update.comentarioAnunciante == null
                             ? () => _showRespondDialog(context, vm, update.id)
                             : null,
                       );
@@ -94,10 +96,7 @@ class _FollowUpReviewPageState extends State<FollowUpReviewPage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
         ],
       ),
       child: Row(
@@ -106,7 +105,12 @@ class _FollowUpReviewPageState extends State<FollowUpReviewPage> {
           if (f.petFotoUrl != null)
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(f.petFotoUrl!, width: 120, height: 120, fit: BoxFit.cover),
+              child: Image.network(
+                f.petFotoUrl!,
+                width: 120,
+                height: 120,
+                fit: BoxFit.cover,
+              ),
             )
           else
             Container(
@@ -128,22 +132,39 @@ class _FollowUpReviewPageState extends State<FollowUpReviewPage> {
                   children: [
                     Text(
                       f.petNome,
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                     FollowUpStatusBadge(status: f.status),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text('Adotante: ${f.adotanteNome}', style: const TextStyle(fontSize: 16)),
+                Text(
+                  'Adotante: ${f.adotanteNome}',
+                  style: const TextStyle(fontSize: 16),
+                ),
                 const SizedBox(height: 16),
                 Wrap(
                   spacing: 40,
                   runSpacing: 16,
                   children: [
-                    _buildInfoColumn('Data Início', DateFormat('dd/MM/yyyy').format(f.dataInicio)),
-                    _buildInfoColumn('Próxima Atualização', DateFormat('dd/MM/yyyy').format(f.dataProximaAtualizacao)),
+                    _buildInfoColumn(
+                      'Data Início',
+                      DateFormat('dd/MM/yyyy').format(f.dataInicio),
+                    ),
+                    _buildInfoColumn(
+                      'Próxima Atualização',
+                      DateFormat('dd/MM/yyyy').format(f.dataProximaAtualizacao),
+                    ),
                     if (f.dataUltimaAtualizacao != null)
-                      _buildInfoColumn('Última Atualização', DateFormat('dd/MM/yyyy').format(f.dataUltimaAtualizacao!)),
+                      _buildInfoColumn(
+                        'Última Atualização',
+                        DateFormat(
+                          'dd/MM/yyyy',
+                        ).format(f.dataUltimaAtualizacao!),
+                      ),
                   ],
                 ),
               ],
@@ -156,7 +177,10 @@ class _FollowUpReviewPageState extends State<FollowUpReviewPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 20,
+                ),
               ),
               child: const Text('Finalizar Processo'),
             ),
@@ -176,7 +200,11 @@ class _FollowUpReviewPageState extends State<FollowUpReviewPage> {
     );
   }
 
-  void _showRespondDialog(BuildContext context, FollowUpViewModel vm, String updateId) {
+  void _showRespondDialog(
+    BuildContext context,
+    FollowUpViewModel vm,
+    String updateId,
+  ) {
     _commentController.clear();
     showDialog(
       context: context,
@@ -185,26 +213,32 @@ class _FollowUpReviewPageState extends State<FollowUpReviewPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Seu comentário ajudará o adotante a se sentir mais seguro no processo.'),
+            const Text(
+              'Seu comentário ajudará o adotante a se sentir mais seguro no processo.',
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: _commentController,
               maxLines: 4,
               decoration: const InputDecoration(
-                hintText: 'Ex: "Que alegria ver o pet tão bem adaptado! Continue assim."',
+                hintText:
+                    'Ex: "Que alegria ver o pet tão bem adaptado! Continue assim."',
                 border: OutlineInputBorder(),
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
           ElevatedButton(
             onPressed: () async {
               final ok = await vm.respondUpdate(
-                updateId, 
-                widget.id, 
-                aprovado: true, 
+                updateId,
+                widget.id,
+                aprovado: true,
                 comentario: _commentController.text,
               );
               if (ok && mounted) Navigator.pop(ctx);
@@ -216,7 +250,11 @@ class _FollowUpReviewPageState extends State<FollowUpReviewPage> {
     );
   }
 
-  void _showConcludeDialog(BuildContext context, FollowUpViewModel vm, String id) {
+  void _showConcludeDialog(
+    BuildContext context,
+    FollowUpViewModel vm,
+    String id,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -225,7 +263,10 @@ class _FollowUpReviewPageState extends State<FollowUpReviewPage> {
           'Iso indica que o pet está totalmente adaptado e as revisões periódicas obrigatórias não são mais necessárias.\n\nDeseja continuar?',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Não')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Não'),
+          ),
           ElevatedButton(
             onPressed: () async {
               final ok = await vm.concludeFollowUp(id);

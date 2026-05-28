@@ -42,7 +42,10 @@ class _FollowUpManagementPageState extends State<FollowUpManagementPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(vm.error!, style: const TextStyle(color: Colors.red)),
+                        Text(
+                          vm.error!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: vm.loadFollowUps,
@@ -109,50 +112,104 @@ class _FollowUpManagementPageState extends State<FollowUpManagementPage> {
             headingRowColor: MaterialStateProperty.all(const Color(0xFFF8F9FA)),
             dataRowHeight: 64,
             columns: const [
-              DataColumn(label: Text('PET', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('ADOTANTE', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('DATA INÍCIO', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('ÚLT. ATUALIZAÇÃO', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('PRÓX. ATUALIZAÇÃO', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('STATUS', style: TextStyle(fontWeight: FontWeight.bold))),
-              DataColumn(label: Text('AÇÕES', style: TextStyle(fontWeight: FontWeight.bold))),
+              DataColumn(
+                label: Text(
+                  'PET',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'ADOTANTE',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'DATA INÍCIO',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'ÚLT. ATUALIZAÇÃO',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'PRÓX. ATUALIZAÇÃO',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'STATUS',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              DataColumn(
+                label: Text(
+                  'AÇÕES',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
             rows: followUps.map((f) {
-              return DataRow(cells: [
-                DataCell(
-                  Row(
-                    children: [
-                      if (f.petFotoUrl != null)
-                        CircleAvatar(
-                          backgroundImage: NetworkImage(f.petFotoUrl!),
-                          radius: 18,
-                        )
-                      else
-                        const CircleAvatar(
-                          backgroundColor: Color(0xFFE0E0E0),
-                          radius: 18,
-                          child: Icon(Icons.pets, size: 18, color: Colors.white),
+              return DataRow(
+                cells: [
+                  DataCell(
+                    Row(
+                      children: [
+                        if (f.petFotoUrl != null)
+                          CircleAvatar(
+                            backgroundImage: NetworkImage(f.petFotoUrl!),
+                            radius: 18,
+                          )
+                        else
+                          const CircleAvatar(
+                            backgroundColor: Color(0xFFE0E0E0),
+                            radius: 18,
+                            child: Icon(
+                              Icons.pets,
+                              size: 18,
+                              color: Colors.white,
+                            ),
+                          ),
+                        const SizedBox(width: 12),
+                        Text(
+                          f.petNome,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                      const SizedBox(width: 12),
-                      Text(f.petNome, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                DataCell(Text(f.adotanteNome)),
-                DataCell(Text(DateFormat('dd/MM/yyyy').format(f.dataInicio))),
-                DataCell(Text(f.dataUltimaAtualizacao != null 
-                    ? DateFormat('dd/MM/yyyy').format(f.dataUltimaAtualizacao!)
-                    : 'Nenhuma')),
-                DataCell(Text(DateFormat('dd/MM/yyyy').format(f.dataProximaAtualizacao))),
-                DataCell(FollowUpStatusBadge(status: f.status)),
-                DataCell(
-                  IconButton(
-                    icon: const Icon(Icons.visibility),
-                    tooltip: 'Ver detalhes',
-                    onPressed: () => context.go('/org/follow-up/${f.id}'),
+                  DataCell(Text(f.adotanteNome)),
+                  DataCell(Text(DateFormat('dd/MM/yyyy').format(f.dataInicio))),
+                  DataCell(
+                    Text(
+                      f.dataUltimaAtualizacao != null
+                          ? DateFormat(
+                              'dd/MM/yyyy',
+                            ).format(f.dataUltimaAtualizacao!)
+                          : 'Nenhuma',
+                    ),
                   ),
-                ),
-              ]);
+                  DataCell(
+                    Text(
+                      DateFormat('dd/MM/yyyy').format(f.dataProximaAtualizacao),
+                    ),
+                  ),
+                  DataCell(FollowUpStatusBadge(status: f.status)),
+                  DataCell(
+                    IconButton(
+                      icon: const Icon(Icons.visibility),
+                      tooltip: 'Ver detalhes',
+                      onPressed: () => context.go('/org/follow-up/${f.id}'),
+                    ),
+                  ),
+                ],
+              );
             }).toList(),
           ),
         ),

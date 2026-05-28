@@ -65,10 +65,12 @@ Future<void> main() async {
   final petViewModel = PetViewModel(petRepository);
 
   final adoptionRequestRemote = AdoptionRequestRemoteDatasource(httpClient);
-  final adoptionRequestRepository =
-      AdoptionRequestRepositoryImpl(adoptionRequestRemote);
-  final adoptionRequestViewmodel =
-      AdoptionRequestViewmodel(adoptionRequestRepository);
+  final adoptionRequestRepository = AdoptionRequestRepositoryImpl(
+    adoptionRequestRemote,
+  );
+  final adoptionRequestViewmodel = AdoptionRequestViewmodel(
+    adoptionRequestRepository,
+  );
 
   final followUpRemote = FollowUpRemoteDatasource(httpClient);
   final followUpRepository = FollowUpRepositoryImpl(followUpRemote);
@@ -105,9 +107,7 @@ Future<void> main() async {
           value: followUpViewModel,
         ),
 
-        ChangeNotifierProvider(
-          create: (_) => CatalogViewModel(petRepository),
-        ),
+        ChangeNotifierProvider(create: (_) => CatalogViewModel(petRepository)),
 
         ChangeNotifierProvider(
           create: (_) => UserSettingsViewModel(

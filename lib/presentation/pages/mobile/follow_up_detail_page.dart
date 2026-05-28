@@ -43,8 +43,10 @@ class _FollowUpDetailPageState extends State<FollowUpDetailPage> {
       appBar: AppBar(title: const Text('Acompanhamento')),
       body: Consumer<FollowUpViewModel>(
         builder: (context, vm, child) {
-          if (vm.isLoading) return const Center(child: CircularProgressIndicator());
-          if (vm.selectedFollowUp == null) return const Center(child: Text('Não encontrado'));
+          if (vm.isLoading)
+            return const Center(child: CircularProgressIndicator());
+          if (vm.selectedFollowUp == null)
+            return const Center(child: Text('Não encontrado'));
 
           final f = vm.selectedFollowUp!;
 
@@ -62,7 +64,9 @@ class _FollowUpDetailPageState extends State<FollowUpDetailPage> {
                       label: const Text('Enviar Nova Atualização'),
                       style: ElevatedButton.styleFrom(
                         minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -70,7 +74,11 @@ class _FollowUpDetailPageState extends State<FollowUpDetailPage> {
                   padding: EdgeInsets.fromLTRB(16, 32, 16, 16),
                   child: Text(
                     'HISTÓRICO',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
                   ),
                 ),
                 ListView.builder(
@@ -99,13 +107,17 @@ class _FollowUpDetailPageState extends State<FollowUpDetailPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+        ],
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 30,
-            backgroundImage: f.petFotoUrl != null ? NetworkImage(f.petFotoUrl!) : null,
+            backgroundImage: f.petFotoUrl != null
+                ? NetworkImage(f.petFotoUrl!)
+                : null,
             child: f.petFotoUrl == null ? const Icon(Icons.pets) : null,
           ),
           const SizedBox(width: 16),
@@ -113,7 +125,13 @@ class _FollowUpDetailPageState extends State<FollowUpDetailPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(f.petNome, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                Text(
+                  f.petNome,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 FollowUpStatusBadge(status: f.status),
                 const SizedBox(height: 4),
@@ -137,14 +155,19 @@ class _FollowUpDetailPageState extends State<FollowUpDetailPage> {
         builder: (context, setModalState) => Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
-            top: 20, left: 20, right: 20,
+            top: 20,
+            left: 20,
+            right: 20,
           ),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Nova Atualização', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Nova Atualização',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 16),
                 const Text('Como ele(a) está?'),
                 TextField(
@@ -156,9 +179,24 @@ class _FollowUpDetailPageState extends State<FollowUpDetailPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                _buildDropdown('Saúde', _saude, ['Excelente', 'Boa', 'Regular', 'Ruim'], (v) => setModalState(() => _saude = v!)),
-                _buildDropdown('Comportamento', _comportamento, ['Normal', 'Agitado', 'Triste', 'Agressivo'], (v) => setModalState(() => _comportamento = v!)),
-                _buildDropdown('Alimentação', _alimentacao, ['Ótima', 'Normal', 'Comendo pouco', 'Não come'], (v) => setModalState(() => _alimentacao = v!)),
+                _buildDropdown('Saúde', _saude, [
+                  'Excelente',
+                  'Boa',
+                  'Regular',
+                  'Ruim',
+                ], (v) => setModalState(() => _saude = v!)),
+                _buildDropdown(
+                  'Comportamento',
+                  _comportamento,
+                  ['Normal', 'Agitado', 'Triste', 'Agressivo'],
+                  (v) => setModalState(() => _comportamento = v!),
+                ),
+                _buildDropdown(
+                  'Alimentação',
+                  _alimentacao,
+                  ['Ótima', 'Normal', 'Comendo pouco', 'Não come'],
+                  (v) => setModalState(() => _alimentacao = v!),
+                ),
                 const SizedBox(height: 16),
                 const Text('Fotos recentes'),
                 const SizedBox(height: 8),
@@ -169,22 +207,39 @@ class _FollowUpDetailPageState extends State<FollowUpDetailPage> {
                     children: [
                       InkWell(
                         onTap: () async {
-                          final img = await ImagePicker().pickImage(source: ImageSource.gallery);
-                          if (img != null) setModalState(() => _selectedImages.add(img));
+                          final img = await ImagePicker().pickImage(
+                            source: ImageSource.gallery,
+                          );
+                          if (img != null)
+                            setModalState(() => _selectedImages.add(img));
                         },
                         child: Container(
-                          width: 80, height: 80,
-                          decoration: BoxDecoration(border: Border.all(color: Colors.grey[300]!), borderRadius: BorderRadius.circular(8)),
-                          child: const Icon(Icons.add_a_photo, color: Colors.grey),
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey[300]!),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.add_a_photo,
+                            color: Colors.grey,
+                          ),
                         ),
                       ),
-                      ..._selectedImages.map((img) => Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.file(File(img.path), width: 80, height: 80, fit: BoxFit.cover),
+                      ..._selectedImages.map(
+                        (img) => Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(
+                              File(img.path),
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                         ),
-                      )),
+                      ),
                     ],
                   ),
                 ),
@@ -201,7 +256,9 @@ class _FollowUpDetailPageState extends State<FollowUpDetailPage> {
                     );
                     if (ok && mounted) Navigator.pop(ctx);
                   },
-                  style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
                   child: const Text('Enviar Atualização'),
                 ),
                 const SizedBox(height: 20),
@@ -213,7 +270,12 @@ class _FollowUpDetailPageState extends State<FollowUpDetailPage> {
     );
   }
 
-  Widget _buildDropdown(String label, String value, List<String> options, ValueChanged<String?> onChanged) {
+  Widget _buildDropdown(
+    String label,
+    String value,
+    List<String> options,
+    ValueChanged<String?> onChanged,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -224,7 +286,9 @@ class _FollowUpDetailPageState extends State<FollowUpDetailPage> {
             child: DropdownButton<String>(
               value: value,
               isExpanded: true,
-              items: options.map((o) => DropdownMenuItem(value: o, child: Text(o))).toList(),
+              items: options
+                  .map((o) => DropdownMenuItem(value: o, child: Text(o)))
+                  .toList(),
               onChanged: onChanged,
             ),
           ),

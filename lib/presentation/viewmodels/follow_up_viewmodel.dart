@@ -20,27 +20,36 @@ class FollowUpViewModel extends ChangeNotifier {
 
   String _msg(Object e) => e is Failure ? e.message : e.toString();
 
-  void clearMessages() { error = null; successMessage = null; }
+  void clearMessages() {
+    error = null;
+    successMessage = null;
+  }
 
   Future<void> loadFollowUps() async {
-    isLoading = true; error = null; notifyListeners();
+    isLoading = true;
+    error = null;
+    notifyListeners();
     try {
       followUps = await repository.getFollowUps();
     } catch (e) {
       error = _msg(e);
     }
-    isLoading = false; notifyListeners();
+    isLoading = false;
+    notifyListeners();
   }
 
   Future<void> loadFollowUpDetails(String id) async {
-    isLoading = true; error = null; notifyListeners();
+    isLoading = true;
+    error = null;
+    notifyListeners();
     try {
       selectedFollowUp = await repository.getFollowUpById(id);
       updates = await repository.getUpdatesByFollowUpId(id);
     } catch (e) {
       error = _msg(e);
     }
-    isLoading = false; notifyListeners();
+    isLoading = false;
+    notifyListeners();
   }
 
   Future<bool> sendUpdate({
@@ -51,7 +60,9 @@ class FollowUpViewModel extends ChangeNotifier {
     String? statusComportamento,
     String? statusAlimentacao,
   }) async {
-    isSaving = true; error = null; notifyListeners();
+    isSaving = true;
+    error = null;
+    notifyListeners();
     try {
       await repository.sendUpdate(
         followUpId,
@@ -73,13 +84,21 @@ class FollowUpViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> respondUpdate(String updateId, String followUpId, {
+  Future<bool> respondUpdate(
+    String updateId,
+    String followUpId, {
     required bool aprovado,
     String? comentario,
   }) async {
-    isSaving = true; error = null; notifyListeners();
+    isSaving = true;
+    error = null;
+    notifyListeners();
     try {
-      await repository.respondUpdate(updateId, aprovado: aprovado, comentario: comentario);
+      await repository.respondUpdate(
+        updateId,
+        aprovado: aprovado,
+        comentario: comentario,
+      );
       successMessage = 'Resposta enviada.';
       isSaving = false;
       await loadFollowUpDetails(followUpId);
@@ -93,7 +112,9 @@ class FollowUpViewModel extends ChangeNotifier {
   }
 
   Future<bool> concludeFollowUp(String followUpId) async {
-    isLoading = true; error = null; notifyListeners();
+    isLoading = true;
+    error = null;
+    notifyListeners();
     try {
       await repository.concludeFollowUp(followUpId);
       successMessage = 'Acompanhamento finalizado com sucesso!';

@@ -5,8 +5,9 @@ abstract class FollowUpRepository {
   Future<List<AdoptionFollowUp>> getFollowUps();
   Future<AdoptionFollowUp?> getFollowUpById(String id);
   Future<List<FollowUpUpdate>> getUpdatesByFollowUpId(String followUpId);
-  
-  Future<void> sendUpdate(String followUpId, {
+
+  Future<void> sendUpdate(
+    String followUpId, {
     required List<String> fotosPaths,
     String? descricao,
     String? statusSaude,
@@ -14,7 +15,8 @@ abstract class FollowUpRepository {
     String? statusAlimentacao,
   });
 
-  Future<void> respondUpdate(String updateId, {
+  Future<void> respondUpdate(
+    String updateId, {
     required bool aprovado,
     String? comentario,
   });

@@ -19,13 +19,16 @@ class FollowUpRemoteDatasource {
     return AdoptionFollowUpModel.fromJson(response.data);
   }
 
-  Future<List<FollowUpUpdateModel>> getUpdatesByFollowUpId(String followUpId) async {
+  Future<List<FollowUpUpdateModel>> getUpdatesByFollowUpId(
+    String followUpId,
+  ) async {
     final response = await client.get('/follow-ups/$followUpId/updates');
     final List data = response.data;
     return data.map((json) => FollowUpUpdateModel.fromJson(json)).toList();
   }
 
-  Future<void> sendUpdate(String followUpId, {
+  Future<void> sendUpdate(
+    String followUpId, {
     required List<String> fotosPaths,
     String? descricao,
     String? statusSaude,
@@ -40,23 +43,21 @@ class FollowUpRemoteDatasource {
     });
 
     for (var path in fotosPaths) {
-      formData.files.add(MapEntry(
-        'fotos',
-        await MultipartFile.fromFile(path),
-      ));
+      formData.files.add(MapEntry('fotos', await MultipartFile.fromFile(path)));
     }
 
     await client.post('/follow-ups/$followUpId/updates', data: formData);
   }
 
-  Future<void> respondUpdate(String updateId, {
+  Future<void> respondUpdate(
+    String updateId, {
     required bool aprovado,
     String? comentario,
   }) async {
-    await client.patch('/follow-ups/updates/$updateId', data: {
-      'aprovado': aprovado,
-      'comentario': comentario,
-    });
+    await client.patch(
+      '/follow-ups/updates/$updateId',
+      data: {'aprovado': aprovado, 'comentario': comentario},
+    );
   }
 
   Future<void> concludeFollowUp(String followUpId) async {

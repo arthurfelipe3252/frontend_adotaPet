@@ -26,17 +26,14 @@ class FollowUpTimelineItem extends StatelessWidget {
                 width: 12,
                 height: 12,
                 decoration: BoxDecoration(
-                  color: update.aprovadoPeloAnunciante ? Colors.green : Colors.blue,
+                  color: update.aprovadoPeloAnunciante
+                      ? Colors.green
+                      : Colors.blue,
                   shape: BoxShape.circle,
                 ),
               ),
               if (!isLast)
-                Expanded(
-                  child: Container(
-                    width: 2,
-                    color: Colors.grey[300],
-                  ),
-                ),
+                Expanded(child: Container(width: 2, color: Colors.grey[300])),
             ],
           ),
           const SizedBox(width: 16),
@@ -90,10 +87,22 @@ class FollowUpTimelineItem extends StatelessWidget {
                             ),
                           ),
                         const SizedBox(height: 12),
-                        _buildStatusRow(Icons.favorite, 'Saúde', update.statusSaude),
-                        _buildStatusRow(Icons.psychology, 'Comportamento', update.statusComportamento),
-                        _buildStatusRow(Icons.restaurant, 'Alimentação', update.statusAlimentacao),
-                        
+                        _buildStatusRow(
+                          Icons.favorite,
+                          'Saúde',
+                          update.statusSaude,
+                        ),
+                        _buildStatusRow(
+                          Icons.psychology,
+                          'Comportamento',
+                          update.statusComportamento,
+                        ),
+                        _buildStatusRow(
+                          Icons.restaurant,
+                          'Alimentação',
+                          update.statusAlimentacao,
+                        ),
+
                         if (update.comentarioAnunciante != null) ...[
                           const Divider(height: 24),
                           Container(
@@ -107,7 +116,11 @@ class FollowUpTimelineItem extends StatelessWidget {
                               children: [
                                 Row(
                                   children: [
-                                    Icon(Icons.chat_bubble_outline, size: 14, color: Colors.grey[600]),
+                                    Icon(
+                                      Icons.chat_bubble_outline,
+                                      size: 14,
+                                      color: Colors.grey[600],
+                                    ),
                                     const SizedBox(width: 4),
                                     Text(
                                       'Resposta do Anunciante',
@@ -122,7 +135,10 @@ class FollowUpTimelineItem extends StatelessWidget {
                                 const SizedBox(height: 4),
                                 Text(
                                   update.comentarioAnunciante!,
-                                  style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic),
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontStyle: FontStyle.italic,
+                                  ),
                                 ),
                               ],
                             ),
@@ -156,7 +172,14 @@ class FollowUpTimelineItem extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: Colors.grey[600]),
           const SizedBox(width: 4),
-          Text('$label: ', style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.bold)),
+          Text(
+            '$label: ',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           Text(value, style: const TextStyle(fontSize: 12)),
         ],
       ),

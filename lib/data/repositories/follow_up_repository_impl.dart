@@ -27,7 +27,8 @@ class FollowUpRepositoryImpl implements FollowUpRepository {
   }
 
   @override
-  Future<void> sendUpdate(String followUpId, {
+  Future<void> sendUpdate(
+    String followUpId, {
     required List<String> fotosPaths,
     String? descricao,
     String? statusSaude,
@@ -45,11 +46,16 @@ class FollowUpRepositoryImpl implements FollowUpRepository {
   }
 
   @override
-  Future<void> respondUpdate(String updateId, {
+  Future<void> respondUpdate(
+    String updateId, {
     required bool aprovado,
     String? comentario,
   }) async {
-    await remote.respondUpdate(updateId, aprovado: aprovado, comentario: comentario);
+    await remote.respondUpdate(
+      updateId,
+      aprovado: aprovado,
+      comentario: comentario,
+    );
   }
 
   @override

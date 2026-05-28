@@ -93,7 +93,9 @@ GoRouter buildAppRouter(AuthViewModel auth) {
         path: '/settings',
         builder: (_, __) => kIsWeb
             ? const UserSettingsPage()
-            : const _MobilePlaceholder(message: 'Configurações mobile em breve'),
+            : const _MobilePlaceholder(
+                message: 'Configurações mobile em breve',
+              ),
       ),
       GoRoute(path: '/org/dashboard', redirect: (_, __) => '/home'),
       GoRoute(path: '/org/profile', redirect: (_, __) => '/settings'),
@@ -102,9 +104,7 @@ GoRouter buildAppRouter(AuthViewModel auth) {
         path: '/org/requests',
         builder: (_, __) => kIsWeb
             ? const AdoptionRequestPage()
-            : const _MobilePlaceholder(
-                message: 'Solicitações mobile em breve',
-              ),
+            : const _MobilePlaceholder(message: 'Solicitações mobile em breve'),
       ),
       GoRoute(
         path: '/org/follow-ups',
@@ -124,7 +124,8 @@ GoRouter buildAppRouter(AuthViewModel auth) {
       ),
       GoRoute(
         path: '/follow-up/:id',
-        builder: (_, state) => mobile.FollowUpDetailPage(id: state.pathParameters['id']!),
+        builder: (_, state) =>
+            mobile.FollowUpDetailPage(id: state.pathParameters['id']!),
       ),
       GoRoute(path: '/org/events', redirect: (_, __) => '/home'),
       // ── Módulo de Pets (ONG) ──────────────────────────────────────────────
@@ -138,7 +139,8 @@ GoRouter buildAppRouter(AuthViewModel auth) {
       GoRoute(path: '/catalog', builder: (_, __) => const CatalogPage()),
       GoRoute(
         path: '/catalog/:id',
-        builder: (_, state) => PetDetailPage(petId: state.pathParameters['id']!),
+        builder: (_, state) =>
+            PetDetailPage(petId: state.pathParameters['id']!),
       ),
     ],
   );
@@ -159,8 +161,11 @@ class _MobilePlaceholder extends StatelessWidget {
             children: [
               const Text('🐾', style: TextStyle(fontSize: 56)),
               const SizedBox(height: 16),
-              Text(message, textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
             ],
           ),
         ),

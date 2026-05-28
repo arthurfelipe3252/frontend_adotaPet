@@ -25,10 +25,7 @@ class _FollowUpListPageState extends State<FollowUpListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Meus Acompanhamentos'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Meus Acompanhamentos'), elevation: 0),
       body: Consumer<FollowUpViewModel>(
         builder: (context, vm, child) {
           if (vm.isLoading) {
@@ -79,11 +76,19 @@ class _FollowUpListPageState extends State<FollowUpListPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.volunteer_activism_outlined, size: 80, color: Colors.grey[300]),
+          Icon(
+            Icons.volunteer_activism_outlined,
+            size: 80,
+            color: Colors.grey[300],
+          ),
           const SizedBox(height: 16),
           const Text(
             'Nenhuma adoção em acompanhamento.',
-            style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 48, vertical: 8),
@@ -112,7 +117,12 @@ class _FollowUpListPageState extends State<FollowUpListPage> {
               if (f.petFotoUrl != null)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.network(f.petFotoUrl!, width: 80, height: 80, fit: BoxFit.cover),
+                  child: Image.network(
+                    f.petFotoUrl!,
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                  ),
                 )
               else
                 Container(
@@ -131,7 +141,10 @@ class _FollowUpListPageState extends State<FollowUpListPage> {
                   children: [
                     Text(
                       f.petNome,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     FollowUpStatusBadge(status: f.status),
