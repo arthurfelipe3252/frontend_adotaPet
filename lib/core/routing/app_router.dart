@@ -13,8 +13,14 @@ import 'package:adota_pet/presentation/pages/desktop/adoption_request_page.dart'
 import 'package:adota_pet/presentation/pages/desktop/user_settings_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/catalog_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/pet_detail_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/follow_up_management_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/follow_up_review_page.dart';
 import 'package:adota_pet/presentation/pages/mobile/login_page.dart' as mobile;
 import 'package:adota_pet/presentation/pages/mobile/register_adotante_page.dart'
+    as mobile;
+import 'package:adota_pet/presentation/pages/mobile/follow_up_list_page.dart'
+    as mobile;
+import 'package:adota_pet/presentation/pages/mobile/follow_up_detail_page.dart'
     as mobile;
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
 
@@ -99,6 +105,26 @@ GoRouter buildAppRouter(AuthViewModel auth) {
             : const _MobilePlaceholder(
                 message: 'Solicitações mobile em breve',
               ),
+      ),
+      GoRoute(
+        path: '/org/follow-ups',
+        builder: (_, __) => kIsWeb
+            ? const FollowUpManagementPage()
+            : const mobile.FollowUpListPage(),
+      ),
+      GoRoute(
+        path: '/org/follow-up/:id',
+        builder: (_, state) => kIsWeb
+            ? FollowUpReviewPage(id: state.pathParameters['id']!)
+            : mobile.FollowUpDetailPage(id: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/follow-ups',
+        builder: (_, __) => const mobile.FollowUpListPage(),
+      ),
+      GoRoute(
+        path: '/follow-up/:id',
+        builder: (_, state) => mobile.FollowUpDetailPage(id: state.pathParameters['id']!),
       ),
       GoRoute(path: '/org/events', redirect: (_, __) => '/home'),
       // ── Módulo de Pets (ONG) ──────────────────────────────────────────────

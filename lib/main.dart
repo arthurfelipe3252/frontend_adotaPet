@@ -28,6 +28,9 @@ import 'presentation/viewmodels/pet_viewmodel.dart';
 import 'presentation/viewmodels/register_adotante_viewmodel.dart';
 import 'presentation/viewmodels/register_protetor_ong_viewmodel.dart';
 import 'presentation/viewmodels/catalog_viewmodel.dart';
+import 'data/datasources/follow_up_remote_datasource.dart';
+import 'data/repositories/follow_up_repository_impl.dart';
+import 'presentation/viewmodels/follow_up_viewmodel.dart';
 import 'presentation/viewmodels/user_settings_viewmodel.dart';
 import 'presentation/widgets/app_notifications_host.dart';
 
@@ -67,6 +70,10 @@ Future<void> main() async {
   final adoptionRequestViewmodel =
       AdoptionRequestViewmodel(adoptionRequestRepository);
 
+  final followUpRemote = FollowUpRemoteDatasource(httpClient);
+  final followUpRepository = FollowUpRepositoryImpl(followUpRemote);
+  final followUpViewModel = FollowUpViewModel(followUpRepository);
+
   runApp(
     MultiProvider(
       providers: [
@@ -92,6 +99,10 @@ Future<void> main() async {
 
         ChangeNotifierProvider<AdoptionRequestViewmodel>.value(
           value: adoptionRequestViewmodel,
+        ),
+
+        ChangeNotifierProvider<FollowUpViewModel>.value(
+          value: followUpViewModel,
         ),
 
         ChangeNotifierProvider(
