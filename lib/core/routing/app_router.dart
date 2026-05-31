@@ -1,0 +1,178 @@
+// ignore_for_file: unnecessary_underscores
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import 'package:adota_pet/presentation/pages/desktop/forgot_password_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/dashboard_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/login_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/register_protetor_ong_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/splash_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/org_pet_list_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/pet_form_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/adoption_request_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/user_settings_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/catalog_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/pet_detail_page.dart';
+import 'package:adota_pet/presentation/pages/mobile/login_page.dart' as mobile;
+import 'package:adota_pet/presentation/pages/mobile/register_adotante_page.dart'
+    as mobile;
+import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
+import 'package:adota_pet/presentation/widgets/org_shell.dart';
+
+GoRouter buildAppRouter(AuthViewModel auth) {
+  return GoRouter(
+    initialLocation: '/splash',
+    refreshListenable: auth,
+    redirect: (context, state) {
+      final loc = state.matchedLocation;
+
+      if (!auth.bootstrapDone) {
+        return loc == '/splash' ? null : '/splash';
+      }
+
+      if (loc == '/splash') {
+        return auth.isAuthenticated ? '/home' : '/login';
+      }
+
+      final isAuthRoute =
+          loc == '/login' ||
+          loc == '/register-org' ||
+          loc == '/register-adotante' ||
+          loc == '/forgot-password';
+
+      if (auth.isAuthenticated && isAuthRoute) return '/home';
+
+      // Todas as demais rotas exigem login.
+      if (!auth.isAuthenticated && !isAuthRoute) return '/login';
+
+      return null;
+    },
+    routes: [
+      GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
+      GoRoute(
+        path: '/login',
+        builder: (_, __) =>
+            kIsWeb ? const LoginPage() : const mobile.LoginPage(),
+      ),
+      GoRoute(
+        path: '/register-org',
+        builder: (_, __) => kIsWeb
+            ? const RegisterProtetorOngPage()
+            : const _MobilePlaceholder(
+                message:
+                    'O cadastro de ONG/Protetor está disponível apenas na versão web.',
+              ),
+      ),
+      GoRoute(
+        path: '/register-adotante',
+        builder: (_, __) => kIsWeb
+            ? const _MobilePlaceholder(
+                message:
+                    'O cadastro de adotante está disponível apenas no app mobile.',
+              )
+            : const mobile.RegisterAdotantePage(),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        builder: (_, __) => kIsWeb
+            ? const ForgotPasswordPage()
+            : const _MobilePlaceholder(message: 'Em breve'),
+      ),
+      // ── Painel ONG (web): todas as telas dentro do shell com sidebar ──────
+      // No mobile, estas rotas exibem placeholders (sem o shell de painel).
+      ShellRoute(
+        builder: (context, state, child) =>
+            kIsWeb ? OrgShell(child: child) : child,
+        routes: [
+          GoRoute(
+            path: '/home',
+            builder: (_, __) => kIsWeb
+                ? const DashboardPage()
+                : const _MobilePlaceholder(message: 'Home mobile em breve'),
+          ),
+          GoRoute(
+            path: '/pets',
+            builder: (_, __) => kIsWeb
+                ? const OrgPetListPage()
+                : const _MobilePlaceholder(
+                    message: 'Disponível na versão web.',
+                  ),
+          ),
+          GoRoute(
+            path: '/pets/new',
+            builder: (_, __) => kIsWeb
+                ? const PetFormPage()
+                : const _MobilePlaceholder(
+                    message: 'Disponível na versão web.',
+                  ),
+          ),
+          GoRoute(
+            path: '/pets/:id',
+            builder: (_, state) => kIsWeb
+                ? PetFormPage(petId: state.pathParameters['id'])
+                : const _MobilePlaceholder(
+                    message: 'Disponível na versão web.',
+                  ),
+          ),
+          GoRoute(
+            path: '/adoptions',
+            builder: (_, __) => kIsWeb
+                ? const AdoptionRequestPage()
+                : const _MobilePlaceholder(
+                    message: 'Solicitações mobile em breve',
+                  ),
+          ),
+          GoRoute(
+            path: '/settings',
+            builder: (_, __) => kIsWeb
+                ? const UserSettingsPage()
+                : const _MobilePlaceholder(
+                    message: 'Configurações mobile em breve',
+                  ),
+          ),
+        ],
+      ),
+
+      // ── Redirects legados (compatibilidade de nomenclatura) ───────────────
+      GoRoute(path: '/org/dashboard', redirect: (_, __) => '/home'),
+      GoRoute(path: '/org/profile', redirect: (_, __) => '/settings'),
+      GoRoute(path: '/org/pets', redirect: (_, __) => '/pets'),
+      GoRoute(path: '/org/events', redirect: (_, __) => '/home'),
+
+      // ── Catálogo público (fluxo do adotante — fora do escopo do painel) ───
+      GoRoute(path: '/catalog', builder: (_, __) => const CatalogPage()),
+      GoRoute(
+        path: '/catalog/:id',
+        builder: (_, state) =>
+            PetDetailPage(petId: state.pathParameters['id']!),
+      ),
+    ],
+  );
+}
+
+class _MobilePlaceholder extends StatelessWidget {
+  final String message;
+  const _MobilePlaceholder({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('🐾', style: TextStyle(fontSize: 56)),
+              const SizedBox(height: 16),
+              Text(message, textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineSmall),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
