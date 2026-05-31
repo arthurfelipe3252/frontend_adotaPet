@@ -28,6 +28,9 @@ class AppTheme {
   static const Color destructive = Color(0xFFD93939);
   static const Color border = Color(0xFFE2DCD2);
 
+  /// Preenchimento creme dos campos (inputs, toggles, slots de foto).
+  static const Color inputFill = Color(0xFFF1ECE3);
+
   static ThemeData light() {
     final base = ThemeData(
       useMaterial3: true,
@@ -58,6 +61,11 @@ class AppTheme {
         fontWeight: FontWeight.w800,
         color: foreground,
       ),
+      displaySmall: GoogleFonts.quicksand(
+        fontSize: 28,
+        fontWeight: FontWeight.w800,
+        color: foreground,
+      ),
       headlineLarge: GoogleFonts.quicksand(
         fontSize: 30,
         fontWeight: FontWeight.w700,
@@ -78,9 +86,24 @@ class AppTheme {
         fontWeight: FontWeight.w600,
         color: foreground,
       ),
+      titleMedium: GoogleFonts.quicksand(
+        fontSize: 16,
+        fontWeight: FontWeight.w700,
+        color: foreground,
+      ),
       labelLarge: GoogleFonts.nunito(
         fontSize: 14,
         fontWeight: FontWeight.w600,
+        color: foreground,
+      ),
+      bodyLarge: GoogleFonts.nunito(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: foreground,
+      ),
+      bodyMedium: GoogleFonts.nunito(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
         color: foreground,
       ),
     );
@@ -89,7 +112,7 @@ class AppTheme {
       textTheme: textTheme,
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFFF1ECE3),
+        fillColor: inputFill,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 16,

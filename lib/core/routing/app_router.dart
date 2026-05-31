@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:adota_pet/presentation/pages/desktop/forgot_password_page.dart';
-import 'package:adota_pet/presentation/pages/desktop/home_placeholder_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/dashboard_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/login_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/register_protetor_ong_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/splash_page.dart';
@@ -19,6 +19,7 @@ import 'package:adota_pet/presentation/pages/mobile/login_page.dart' as mobile;
 import 'package:adota_pet/presentation/pages/mobile/register_adotante_page.dart'
     as mobile;
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
+import 'package:adota_pet/presentation/widgets/org_shell.dart';
 
 GoRouter buildAppRouter(AuthViewModel auth) {
   return GoRouter(
@@ -79,42 +80,73 @@ GoRouter buildAppRouter(AuthViewModel auth) {
             ? const ForgotPasswordPage()
             : const _MobilePlaceholder(message: 'Em breve'),
       ),
-      GoRoute(
-        path: '/home',
-        builder: (_, __) => kIsWeb
-            ? const HomePlaceholderPage()
-            : const _MobilePlaceholder(message: 'Home mobile em breve'),
+      // ── Painel ONG (web): todas as telas dentro do shell com sidebar ──────
+      // No mobile, estas rotas exibem placeholders (sem o shell de painel).
+      ShellRoute(
+        builder: (context, state, child) =>
+            kIsWeb ? OrgShell(child: child) : child,
+        routes: [
+          GoRoute(
+            path: '/home',
+            builder: (_, __) => kIsWeb
+                ? const DashboardPage()
+                : const _MobilePlaceholder(message: 'Home mobile em breve'),
+          ),
+          GoRoute(
+            path: '/pets',
+            builder: (_, __) => kIsWeb
+                ? const OrgPetListPage()
+                : const _MobilePlaceholder(
+                    message: 'Disponível na versão web.',
+                  ),
+          ),
+          GoRoute(
+            path: '/pets/new',
+            builder: (_, __) => kIsWeb
+                ? const PetFormPage()
+                : const _MobilePlaceholder(
+                    message: 'Disponível na versão web.',
+                  ),
+          ),
+          GoRoute(
+            path: '/pets/:id',
+            builder: (_, state) => kIsWeb
+                ? PetFormPage(petId: state.pathParameters['id'])
+                : const _MobilePlaceholder(
+                    message: 'Disponível na versão web.',
+                  ),
+          ),
+          GoRoute(
+            path: '/adoptions',
+            builder: (_, __) => kIsWeb
+                ? const AdoptionRequestPage()
+                : const _MobilePlaceholder(
+                    message: 'Solicitações mobile em breve',
+                  ),
+          ),
+          GoRoute(
+            path: '/settings',
+            builder: (_, __) => kIsWeb
+                ? const UserSettingsPage()
+                : const _MobilePlaceholder(
+                    message: 'Configurações mobile em breve',
+                  ),
+          ),
+        ],
       ),
-      GoRoute(
-        path: '/settings',
-        builder: (_, __) => kIsWeb
-            ? const UserSettingsPage()
-            : const _MobilePlaceholder(message: 'Configurações mobile em breve'),
-      ),
+
+      // ── Redirects legados (compatibilidade de nomenclatura) ───────────────
       GoRoute(path: '/org/dashboard', redirect: (_, __) => '/home'),
       GoRoute(path: '/org/profile', redirect: (_, __) => '/settings'),
       GoRoute(path: '/org/pets', redirect: (_, __) => '/pets'),
-      GoRoute(
-        path: '/adoptions',
-        builder: (_, __) => kIsWeb
-            ? const AdoptionRequestPage()
-            : const _MobilePlaceholder(
-                message: 'Solicitações mobile em breve',
-              ),
-      ),
       GoRoute(path: '/org/events', redirect: (_, __) => '/home'),
-      // ── Módulo de Pets (ONG) ──────────────────────────────────────────────
-      GoRoute(path: '/pets', builder: (_, __) => const OrgPetListPage()),
-      GoRoute(path: '/pets/new', builder: (_, __) => const PetFormPage()),
-      GoRoute(
-        path: '/pets/:id',
-        builder: (_, state) => PetFormPage(petId: state.pathParameters['id']),
-      ),
-      // ── Catálogo público ──────────────────────────────────────────────────
+
+      // ── Catálogo público (fluxo do adotante — fora do escopo do painel) ───
       GoRoute(path: '/catalog', builder: (_, __) => const CatalogPage()),
       GoRoute(
         path: '/catalog/:id',
-        builder: (_, state) => PetDetailPage(petId: state.pathParameters['id']!),
+        builder: (_, state) =>
+            PetDetailPage(petId: state.pathParameters['id']!),
       ),
     ],
   );

@@ -31,8 +31,6 @@ class AdoptionRequestViewmodel extends ChangeNotifier {
 
   Future<bool> createFromPetDetail({
     required String petId,
-    required String adopterId,
-    String? protetorId,
     String? mensagem,
     Map<String, dynamic>? questionario,
   }) async {
@@ -45,8 +43,6 @@ class AdoptionRequestViewmodel extends ChangeNotifier {
     try {
       final nova = await repository.create(
         petId: petId,
-        protetorId: protetorId,
-        adopterId: adopterId,
         mensagem: mensagem,
         matchScore: matchScore,
         questionario: questionario,
@@ -99,8 +95,6 @@ class AdoptionRequestViewmodel extends ChangeNotifier {
 
   Future<void> create({
     required String petId,
-    required String adopterId,
-    String? protetorId,
     String? notes,
     double? matchScore,
   }) async {
@@ -110,8 +104,6 @@ class AdoptionRequestViewmodel extends ChangeNotifier {
     try {
       final r = await repository.create(
         petId: petId,
-        protetorId: protetorId,
-        adopterId: adopterId,
         mensagem: notes,
         matchScore: matchScore,
       );

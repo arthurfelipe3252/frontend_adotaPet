@@ -155,10 +155,31 @@ class _MobilePlaceholder extends StatelessWidget {
 | `/splash` | `SplashPage` | público (transitória) | implementada |
 | `/login` | `LoginPage` (desktop) | público | implementada |
 | `/register-org` | `RegisterProtetorOngPage` (desktop) | público | implementada |
+| `/register-adotante` | `RegisterAdotantePage` (mobile) | público | implementada |
 | `/forgot-password` | `ForgotPasswordPage` (desktop) | público (mock) | implementada |
-| `/home` | `HomePlaceholderPage` (desktop) | autenticado | placeholder |
+| `/home` | `DashboardPage` (desktop) | autenticado · **painel** | implementada |
+| `/pets` | `OrgPetListPage` (desktop) | autenticado · **painel** | implementada |
+| `/pets/new` · `/pets/:id` | `PetFormPage` (desktop) | autenticado · **painel** | implementada |
+| `/adoptions` | `AdoptionRequestPage` (desktop) | autenticado · **painel** | implementada |
+| `/settings` | `UserSettingsPage` (desktop) | autenticado · **painel** | implementada |
+| `/catalog` · `/catalog/:id` | `CatalogPage` · `PetDetailPage` | autenticado (adotante) | implementada |
+| `/org/dashboard` · `/org/profile` · `/org/pets` · `/org/events` | — | — | redirects legados |
 
-Mobile: nenhuma das rotas tem versão mobile ainda. Todas mostram `_MobilePlaceholder`.
+As rotas marcadas **painel** ficam dentro de uma `ShellRoute` que aplica o `OrgShell` (sidebar lateral) no web — veja a seção abaixo. Mobile só tem `/login` e `/register-adotante` reais; as demais mostram `_MobilePlaceholder`.
+
+## Shell do painel (ShellRoute)
+
+As telas do painel da ONG são agrupadas numa `ShellRoute` que renderiza o `OrgShell` (a sidebar lateral fixa) em volta da tela ativa:
+
+```dart
+ShellRoute(
+  builder: (context, state, child) =>
+      kIsWeb ? OrgShell(child: child) : child,
+  routes: [ /* /home, /pets, /pets/new, /pets/:id, /adoptions, /settings */ ],
+),
+```
+
+O `OrgShell` (`presentation/widgets/org_shell.dart`) detecta o item ativo pela rota (`GoRouterState.of(context).uri.path`) — sem `currentIndex` manual. Em telas estreitas a sidebar vira um `Drawer`. No mobile (`!kIsWeb`) o shell é omitido. Cada tela do painel fornece seu próprio título via `PageHeader` (o shell não tem AppBar com título).
 
 ## Navegação na page
 

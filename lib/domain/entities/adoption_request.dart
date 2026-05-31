@@ -3,6 +3,8 @@ class AdoptionRequest {
   final String petId;
   final String? protetorId;
   final String adopterId;
+  final String? adopterNome;
+  final String? protetorNome;
   final String status;
   final String preTriageStatus;
   final double? matchScore;
@@ -16,6 +18,8 @@ class AdoptionRequest {
     required this.petId,
     this.protetorId,
     required this.adopterId,
+    this.adopterNome,
+    this.protetorNome,
     required this.status,
     required this.preTriageStatus,
     this.matchScore,

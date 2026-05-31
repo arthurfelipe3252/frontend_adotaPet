@@ -14,8 +14,10 @@ import 'data/datasources/cep_remote_datasource.dart';
 import 'data/datasources/pet_cache_datasource.dart';
 import 'data/datasources/pet_remote_datasource.dart';
 import 'data/datasources/users_remote_datasource.dart';
+import 'data/datasources/reports_remote_datasource.dart';
 
 import 'data/repositories/adoption_request_repository_impl.dart';
+import 'data/repositories/reports_repository_impl.dart';
 import 'data/repositories/auth_repository_impl.dart';
 import 'data/repositories/cep_repository_impl.dart';
 import 'data/repositories/pet_repository_impl.dart';
@@ -23,6 +25,7 @@ import 'data/repositories/users_repository_impl.dart';
 
 import 'presentation/viewmodels/adoption_request_viewmodel.dart';
 import 'presentation/viewmodels/auth_viewmodel.dart';
+import 'presentation/viewmodels/dashboard_viewmodel.dart';
 import 'presentation/viewmodels/forgot_password_viewmodel.dart';
 import 'presentation/viewmodels/pet_viewmodel.dart';
 import 'presentation/viewmodels/register_adotante_viewmodel.dart';
@@ -59,13 +62,16 @@ Future<void> main() async {
   final petRemote = PetRemoteDatasource(httpClient);
   final petCache = PetCacheDatasource();
   final petRepository = PetRepositoryImpl(petRemote, petCache);
-  final petViewModel = PetViewModel(petRepository);
+  final petViewModel = PetViewModel(petRepository, usersRepository);
 
   final adoptionRequestRemote = AdoptionRequestRemoteDatasource(httpClient);
   final adoptionRequestRepository =
       AdoptionRequestRepositoryImpl(adoptionRequestRemote);
   final adoptionRequestViewmodel =
       AdoptionRequestViewmodel(adoptionRequestRepository);
+
+  final reportsRemote = ReportsRemoteDatasource(httpClient);
+  final reportsRepository = ReportsRepositoryImpl(reportsRemote);
 
   runApp(
     MultiProvider(
@@ -92,6 +98,10 @@ Future<void> main() async {
 
         ChangeNotifierProvider<AdoptionRequestViewmodel>.value(
           value: adoptionRequestViewmodel,
+        ),
+
+        ChangeNotifierProvider(
+          create: (_) => DashboardViewModel(reportsRepository),
         ),
 
         ChangeNotifierProvider(

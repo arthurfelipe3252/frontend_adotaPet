@@ -18,18 +18,16 @@ class AdoptionRequestRepositoryImpl implements AdoptionRequestRepository {
   @override
   Future<AdoptionRequest> create({
     required String petId,
-    String? protetorId,
-    required String adopterId,
     String? mensagem,
     double? matchScore,
     Map<String, dynamic>? questionario,
   }) {
     final scoreInt = matchScore != null ? matchScore.round() : null;
 
+    // adopterId/protetorId NÃO vão no body: o backend deriva o adotante do JWT
+    // e o protetor do pet. Enviar identidade no payload é rejeitado.
     return datasource.create({
       'petId': petId,
-      if (protetorId != null) 'protetorId': protetorId,
-      'adopterId': adopterId,
       if (mensagem != null && mensagem.isNotEmpty) 'mensagem': mensagem,
       if (scoreInt != null) 'matchScore': scoreInt,
       if (questionario != null) 'questionario': questionario,

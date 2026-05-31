@@ -6,6 +6,8 @@ class AdoptionRequestModel extends AdoptionRequest {
     required super.petId,
     super.protetorId,
     required super.adopterId,
+    super.adopterNome,
+    super.protetorNome,
     required super.status,
     required super.preTriageStatus,
     super.matchScore,
@@ -27,6 +29,8 @@ class AdoptionRequestModel extends AdoptionRequest {
       petId: _str(json['petId']) ?? _str(json['_petId']) ?? '',
       protetorId: _str(json['protetorId']) ?? _str(json['_protetorId']),
       adopterId: _str(json['adopterId']) ?? _str(json['_adopterId']) ?? '',
+      adopterNome: _nestedNome(json['adopter']),
+      protetorNome: _nestedNome(json['protetor']),
       status: _str(json['status']) ?? _str(json['_status']) ?? 'received',
       preTriageStatus: _str(json['preTriageStatus']) ?? _str(json['_preTriageStatus']) ?? 'review',
       matchScore: ((json['matchScore'] ?? json['_matchScore']) as num?)?.toDouble(),
@@ -76,6 +80,13 @@ class AdoptionRequestModel extends AdoptionRequest {
     if (v == null) return null;
     final s = v.toString().trim();
     return (s.isEmpty || s == 'null' || s == 'undefined') ? null : s;
+  }
+
+  /// Extrai `nome` de um objeto aninhado (`adopter`/`protetor`) que o backend
+  /// passou a incluir na resposta de adoção.
+  static String? _nestedNome(dynamic v) {
+    if (v is Map) return _str(v['nome']);
+    return null;
   }
 
   static DateTime _parseDate(dynamic v) {

@@ -1,46 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import '../../domain/entities/pet.dart';
 
-class PetStatusBadge extends StatelessWidget {
-  final String status;
-  const PetStatusBadge({super.key, required this.status});
+import 'package:adota_pet/core/theme/app_status_colors.dart';
+import 'package:adota_pet/core/theme/app_theme.dart';
+import 'package:adota_pet/domain/entities/pet.dart';
+import 'package:adota_pet/presentation/widgets/status_pill.dart';
 
-  @override
-  Widget build(BuildContext context) {
-    Color bg;
-    Color fg;
-    String label;
-
-    switch (status) {
-      case 'disponivel':
-        bg = const Color(0xFF2E7D32);
-        fg = const Color(0xFF2E7D32);
-        label = 'Disponível';
-        break;
-      case 'em_processo':
-        bg = const Color(0xFFF59E0B);
-        fg = const Color(0xFFF59E0B);
-        label = 'Em processo';
-        break;
-      case 'adotado':
-        bg = const Color(0xFF1E88E5);
-        fg = const Color(0xFF1E88E5);
-        label = 'Adotado';
-        break;
-      default:
-        bg = Colors.grey;
-        fg = Colors.grey;
-        label = status;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: fg)),
-    );
-  }
-}
-
+/// Card de pet para o grid de "Meus Pets": foto real (ou placeholder com a
+/// inicial), badge de status sobre a foto, nome, raça/espécie e atributos.
 class PetListCard extends StatelessWidget {
   final Pet pet;
   final VoidCallback onTap;
@@ -53,83 +21,156 @@ class PetListCard extends StatelessWidget {
     this.onDelete,
   });
 
+  /// Resolve a primeira foto do pet: data-URI base64 (formato gravado pelo
+  /// app) vira `MemoryImage`; URL http vira `NetworkImage`.
+  ImageProvider? get _image {
+    if (pet.fotosUrls.isEmpty) return null;
+    final src = pet.fotosUrls.first;
+    if (src.isEmpty) return null;
+    try {
+      if (src.startsWith('data:')) {
+        return MemoryImage(base64Decode(src.substring(src.indexOf(',') + 1)));
+      }
+      return NetworkImage(src);
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black,
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
+    final image = _image;
+    return Material(
+      color: AppTheme.surface,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        side: const BorderSide(color: AppTheme.border),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Avatar com inicial
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFCC6633), Color(0xFFE8923E)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  pet.nome[0].toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
+            SizedBox(
+              height: 150,
+              width: double.infinity,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  image != null
+                      ? Image(
+                          image: image,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => _placeholder(),
+                        )
+                      : _placeholder(),
+                  Positioned(
+                    left: 8,
+                    bottom: 8,
+                    child: StatusPill(
+                      label: pet.statusLabel,
+                      color: AppStatusColors.pet(pet.status),
+                    ),
                   ),
-                ),
+                  if (onDelete != null)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: _CircleIconButton(
+                        icon: Icons.delete_outline_rounded,
+                        onTap: onDelete!,
+                      ),
+                    ),
+                ],
               ),
             ),
-            const SizedBox(width: 12),
-            // Infos
-            Expanded(
+            Padding(
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     pet.nome,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF1A1A1A),
+                      color: AppTheme.foreground,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '${pet.raca ?? pet.especieLabel} · ${pet.especieLabel}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      color: AppTheme.mutedForeground,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${pet.idadeFormatada} · ${pet.porteLabel} · ${pet.sexoLabel}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.mutedForeground,
                     ),
                   ),
                 ],
               ),
             ),
-            PetStatusBadge(status: pet.status),
-            if (onDelete != null) ...[
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: onDelete,
-                child: Icon(Icons.more_vert, size: 18, color: Colors.grey[400]),
-              ),
-            ],
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _placeholder() {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppTheme.primary, AppTheme.accent],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Text(
+          pet.nome.isNotEmpty ? pet.nome[0].toUpperCase() : '🐾',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 32,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CircleIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _CircleIconButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black.withOpacity(0.45),
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Icon(icon, size: 18, color: Colors.white),
         ),
       ),
     );

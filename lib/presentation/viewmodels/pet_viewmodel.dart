@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import '../../core/errors/failure.dart';
 import '../../domain/entities/pet.dart';
 import '../../domain/repositories/pet_repository.dart';
+import '../../domain/repositories/users_repository.dart';
 
 class PetViewModel extends ChangeNotifier {
   final PetRepository repository;
+  final UsersRepository usersRepository;
 
-  PetViewModel(this.repository);
+  PetViewModel(this.repository, this.usersRepository);
 
   bool isLoading = false;
   bool isSaving = false;
@@ -41,11 +43,22 @@ class PetViewModel extends ChangeNotifier {
   void setSearch(String query) { searchQuery = query; notifyListeners(); }
   void clearMessages() { error = null; successMessage = null; }
 
+  /// Carrega apenas os pets do protetor/ong autenticado ("Meus Pets"). O
+  /// backend não filtra GET /pets por JWT, então resolvemos o id do perfil via
+  /// /users/protetores-ongs/me e usamos GET /pets/protetor/{id}. (Resolvido a
+  /// cada carga para não vazar o id entre sessões após logout/login.)
   Future<void> loadPets() async {
-    isLoading = true; error = null; notifyListeners();
-    try { pets = await repository.getPets(); }
-    catch (e) { error = _msg(e); }
-    isLoading = false; notifyListeners();
+    isLoading = true;
+    error = null;
+    notifyListeners();
+    try {
+      final perfil = await usersRepository.getMeProtetorOng();
+      pets = await repository.getPetsByProtetor(perfil.id);
+    } catch (e) {
+      error = _msg(e);
+    }
+    isLoading = false;
+    notifyListeners();
   }
 
   Future<void> loadPetById(String id) async {

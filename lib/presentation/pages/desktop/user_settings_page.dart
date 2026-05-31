@@ -9,12 +9,15 @@ import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:provider/provider.dart';
 
 import 'package:adota_pet/core/notifications/app_notifier.dart';
+import 'package:adota_pet/core/theme/app_dimens.dart';
 import 'package:adota_pet/core/theme/app_theme.dart';
 import 'package:adota_pet/presentation/pages/desktop/_error_banner.dart';
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:adota_pet/presentation/viewmodels/user_settings_viewmodel.dart';
-import 'package:adota_pet/presentation/widgets/org_layout.dart';
+import 'package:adota_pet/presentation/widgets/page_header.dart';
 import 'package:adota_pet/presentation/widgets/primary_button.dart';
+import 'package:adota_pet/presentation/widgets/section_card.dart';
+import 'package:adota_pet/presentation/widgets/state_views.dart';
 import 'package:adota_pet/presentation/widgets/text_field_themed.dart';
 
 class UserSettingsPage extends StatefulWidget {
@@ -72,8 +75,11 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
     final usuario = context.read<AuthViewModel>().session?.usuario;
     if (usuario == null) return;
     _didRequestLoad = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) context.read<UserSettingsViewModel>().loadFor(usuario);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final vm = context.read<UserSettingsViewModel>();
+      await vm.loadFor(usuario);
+      if (mounted) _syncFromVm(vm);
     });
   }
 
@@ -146,10 +152,10 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
     _cepDebounce?.cancel();
     final clean = value.replaceAll(RegExp(r'\D'), '');
     if (clean.length == 8) {
-      _cepDebounce = Timer(
-        const Duration(milliseconds: 500),
-        () => vm.consultarCep(),
-      );
+      _cepDebounce = Timer(const Duration(milliseconds: 500), () async {
+        await vm.consultarCep();
+        if (mounted) _syncFromVm(vm);
+      });
     }
   }
 
@@ -203,35 +209,36 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<UserSettingsViewModel>();
-    _syncFromVm(vm);
 
-    return OrgLayout(
-      title: 'Configurações',
-      currentIndex: 4,
+    return ColoredBox(
+      color: AppTheme.background,
       child: vm.isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppTheme.primary),
-            )
+          ? const LoadingView()
           : RefreshIndicator(
               color: AppTheme.primary,
               onRefresh: () async {
                 final usuario = context.read<AuthViewModel>().session?.usuario;
                 if (usuario != null) {
-                  await context.read<UserSettingsViewModel>().loadFor(
-                    usuario,
-                    force: true,
-                  );
+                  final vm = context.read<UserSettingsViewModel>();
+                  await vm.loadFor(usuario, force: true);
+                  if (mounted) _syncFromVm(vm);
                 }
               },
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(AppSpacing.xl),
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 1080),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        const PageHeader(
+                          title: 'Configurações',
+                          subtitle:
+                              'Gerencie os dados da sua conta e da organização.',
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
                         if (vm.error != null) ...[
                           ErrorBanner(message: vm.error!),
                           const SizedBox(height: 16),
@@ -282,15 +289,23 @@ class _UserSettingsPageState extends State<UserSettingsPage> {
                           },
                         ),
                         const SizedBox(height: 16),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: PrimaryButton(
-                            label: 'Salvar alterações',
-                            trailingIcon: Icons.check_rounded,
-                            fullWidth: false,
-                            isLoading: vm.isSavingProfile,
-                            onPressed: _saveProfile,
-                          ),
+                        LayoutBuilder(
+                          builder: (context, c) {
+                            final wide = c.maxWidth >= 520;
+                            final btn = PrimaryButton(
+                              label: 'Salvar alterações',
+                              trailingIcon: Icons.check_rounded,
+                              fullWidth: !wide,
+                              isLoading: vm.isSavingProfile,
+                              onPressed: _saveProfile,
+                            );
+                            return wide
+                                ? Align(
+                                    alignment: Alignment.centerRight,
+                                    child: btn,
+                                  )
+                                : btn;
+                          },
                         ),
                         const SizedBox(height: 24),
                         _PasswordSection(
@@ -349,7 +364,7 @@ class _ProfileSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _SectionCard(
+    return SectionCard(
       title: 'Perfil',
       icon: Icons.manage_accounts_rounded,
       child: Column(
@@ -493,7 +508,7 @@ class _AddressSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _SectionCard(
+    return SectionCard(
       title: 'Endereço',
       icon: Icons.location_on_outlined,
       child: Column(
@@ -632,7 +647,7 @@ class _PasswordSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _SectionCard(
+    return SectionCard(
       title: 'Segurança',
       icon: Icons.lock_outline_rounded,
       child: Column(
@@ -748,7 +763,7 @@ class _SessionsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _SectionCard(
+    return SectionCard(
       title: 'Sessões',
       icon: Icons.devices_rounded,
       child: Wrap(
@@ -805,7 +820,7 @@ class _ProfileImagePicker extends StatelessWidget {
           height: 96,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: const Color(0xFFF1ECE3),
+            color: AppTheme.inputFill,
             border: Border.all(
               color: vm.fieldErrors['imagem'] == null
                   ? AppTheme.border
@@ -879,7 +894,7 @@ class _InfoPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1ECE3),
+        color: AppTheme.inputFill,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppTheme.border),
       ),
@@ -896,50 +911,6 @@ class _InfoPill extends StatelessWidget {
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Widget child;
-
-  const _SectionCard({
-    required this.title,
-    required this.icon,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 20, color: AppTheme.primary),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          child,
         ],
       ),
     );

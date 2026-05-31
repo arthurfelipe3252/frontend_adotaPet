@@ -879,9 +879,7 @@ class _AdoptionRequestSheetState extends State<_AdoptionRequestSheet> {
   }
 
   Future<void> _enviarSolicitacao(BuildContext context) async {
-    final auth = context.read<AuthViewModel>();
     final vm = context.read<AdoptionRequestViewmodel>();
-    final adopterId = auth.session?.usuario.id ?? '';
 
     final questionario = {
       'tipoMoradia': _tipoMoradia,
@@ -893,8 +891,6 @@ class _AdoptionRequestSheetState extends State<_AdoptionRequestSheet> {
 
     final ok = await vm.createFromPetDetail(
       petId: widget.pet.id,
-      adopterId: adopterId,
-      protetorId: widget.pet.protetorId,
       mensagem: _mensagemCtrl.text.trim().isEmpty ? null : _mensagemCtrl.text.trim(),
       questionario: questionario,
     );

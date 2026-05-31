@@ -2,10 +2,22 @@
 
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
+import 'package:adota_pet/core/notifications/app_notifier.dart';
+import 'package:adota_pet/core/theme/app_dimens.dart';
+import 'package:adota_pet/core/theme/app_theme.dart';
 import 'package:adota_pet/presentation/viewmodels/pet_viewmodel.dart';
+import 'package:adota_pet/presentation/widgets/app_dropdown_field.dart';
+import 'package:adota_pet/presentation/widgets/page_header.dart';
+import 'package:adota_pet/presentation/widgets/primary_button.dart';
+import 'package:adota_pet/presentation/widgets/section_card.dart';
+import 'package:adota_pet/presentation/widgets/state_views.dart';
+import 'package:adota_pet/presentation/widgets/text_field_themed.dart';
 
 class PetFormPage extends StatefulWidget {
   final String? petId;
@@ -39,12 +51,13 @@ class _PetFormPageState extends State<PetFormPage> {
   // Fotos: máx 8 slots, índice 0 = foto principal
   final List<Uint8List?> _fotosBytes = List.filled(8, null);
   final List<String?> _fotosNomes = List.filled(8, null);
-  // URLs das fotos já salvas no backend (exibidas quando não há bytes novos)
+  // URLs/data-URIs das fotos já salvas no backend.
   final List<String?> _fotosUrls = List.filled(8, null);
 
   static const _temperamentos = [
-    'Brincalhão','Carinhoso','Tranquilo','Ativo','Inteligente',
-    'Medroso','Independente','Comunicativo','Sociável','Apegado','Treinado','Calmo',
+    'Brincalhão', 'Carinhoso', 'Tranquilo', 'Ativo', 'Inteligente',
+    'Medroso', 'Independente', 'Comunicativo', 'Sociável', 'Apegado',
+    'Treinado', 'Calmo',
   ];
 
   @override
@@ -53,7 +66,7 @@ class _PetFormPageState extends State<PetFormPage> {
     if (widget.isEditing) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         await context.read<PetViewModel>().loadPetById(widget.petId!);
-        _fillForm();
+        if (mounted) _fillForm();
       });
     }
   }
@@ -75,10 +88,12 @@ class _PetFormPageState extends State<PetFormPage> {
       _vacinado = pet.vacinado;
       if (pet.temperamento != null) {
         _selectedTemps.addAll(
-          pet.temperamento!.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty),
+          pet.temperamento!
+              .split(',')
+              .map((t) => t.trim())
+              .where((t) => t.isNotEmpty),
         );
       }
-      // Carrega TODAS as fotos já salvas no backend
       for (int i = 0; i < pet.fotosUrls.length && i < 8; i++) {
         if (pet.fotosUrls[i].isNotEmpty) {
           _fotosUrls[i] = pet.fotosUrls[i];
@@ -88,11 +103,31 @@ class _PetFormPageState extends State<PetFormPage> {
     });
   }
 
+  /// Resolve a imagem de um slot: bytes recém-escolhidos, ou a foto salva
+  /// (data-URI base64 → `MemoryImage`; URL http → `NetworkImage`).
+  ImageProvider? _slotImage(int i) {
+    if (_fotosBytes[i] != null) return MemoryImage(_fotosBytes[i]!);
+    final url = _fotosUrls[i];
+    if (url == null || url.isEmpty) return null;
+    try {
+      if (url.startsWith('data:')) {
+        return MemoryImage(base64Decode(url.substring(url.indexOf(',') + 1)));
+      }
+      return NetworkImage(url);
+    } catch (_) {
+      return null;
+    }
+  }
+
   void _toggleTemp(String t) {
     setState(() {
       if (_selectedTemps.contains(t)) {
         _selectedTemps.remove(t);
-      } else if (_selectedTemps.length < 6) _selectedTemps.add(t);
+      } else if (_selectedTemps.length < 6) {
+        _selectedTemps.add(t);
+      } else {
+        AppNotifier.instance.info('Você pode escolher até 6 características.');
+      }
     });
   }
 
@@ -106,12 +141,7 @@ class _PetFormPageState extends State<PetFormPage> {
     final file = result.files.first;
     if (file.bytes == null) return;
     if (file.bytes!.lengthInBytes > 5 * 1024 * 1024) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Foto muito grande. Máximo 5MB por imagem.'),
-          backgroundColor: Colors.red,
-        ));
-      }
+      AppNotifier.instance.error('Foto muito grande. Máximo 5MB por imagem.');
       return;
     }
     setState(() {
@@ -131,7 +161,11 @@ class _PetFormPageState extends State<PetFormPage> {
 
   bool _validar() {
     bool valido = true;
-    setState(() { _erroNome = null; _erroIdade = null; _erroFoto = null; });
+    setState(() {
+      _erroNome = null;
+      _erroIdade = null;
+      _erroFoto = null;
+    });
 
     if (_fotosBytes[0] == null && _fotosUrls[0] == null) {
       setState(() => _erroFoto = 'Adicione pelo menos 1 foto do pet.');
@@ -167,29 +201,32 @@ class _PetFormPageState extends State<PetFormPage> {
     final anos = int.tryParse(_anosController.text) ?? 0;
     final meses = int.tryParse(_mesesController.text) ?? 0;
 
-    // Monta a lista de fotos: para cada slot, usa bytes novos (convertendo para
-    // base64) ou mantém a URL já salva no backend. Slots vazios são ignorados.
+    // Para cada slot: bytes novos viram data-URI base64; senão mantém a foto
+    // já salva. Slots vazios são ignorados.
     final List<String> fotosUrls = [];
     for (int i = 0; i < 8; i++) {
       if (_fotosBytes[i] != null) {
-        final base64Data = base64Encode(_fotosBytes[i]!);
-        fotosUrls.add('data:image/jpeg;base64,$base64Data');
+        fotosUrls.add('data:image/jpeg;base64,${base64Encode(_fotosBytes[i]!)}');
       } else if (_fotosUrls[i] != null && _fotosUrls[i]!.isNotEmpty) {
         fotosUrls.add(_fotosUrls[i]!);
       }
     }
 
+    // protetorId NÃO vai no body: o backend deriva o protetor do JWT.
     final data = {
-      'protetorId': '00000000-0000-0000-0000-000000000001',
       'nome': _nomeController.text.trim(),
       'especie': _especie,
-      'raca': _racaController.text.trim().isEmpty ? null : _racaController.text.trim(),
+      'raca': _racaController.text.trim().isEmpty
+          ? null
+          : _racaController.text.trim(),
       'porte': _porte,
       'sexo': _sexo,
       'idadeMeses': anos * 12 + meses,
       'castrado': _castrado,
       'vacinado': _vacinado,
-      'descricao': _descricaoController.text.trim().isEmpty ? null : _descricaoController.text.trim(),
+      'descricao': _descricaoController.text.trim().isEmpty
+          ? null
+          : _descricaoController.text.trim(),
       'temperamento': _selectedTemps.isEmpty ? null : _selectedTemps.join(', '),
       'status': _status,
       'fotosUrls': fotosUrls,
@@ -200,46 +237,13 @@ class _PetFormPageState extends State<PetFormPage> {
         ? await vm.updatePet(widget.petId!, data)
         : await vm.createPet(data);
 
-    if (!context.mounted) return;
+    if (!mounted) return;
 
     if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Row(children: [
-          const Icon(Icons.check_circle, color: Colors.white, size: 18),
-          const SizedBox(width: 8),
-          Text(vm.successMessage ?? 'Salvo!'),
-        ]),
-        backgroundColor: const Color(0xFF2E7D32),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ));
-      Navigator.pop(context);
+      AppNotifier.instance.success(vm.successMessage ?? 'Pet salvo com sucesso!');
+      context.go('/pets');
     } else {
-      final mensagem = vm.error ?? 'Erro ao salvar.';
-      if (mensagem.contains('\n')) {
-        showDialog(context: context, builder: (_) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Row(children: [
-            Icon(Icons.error_outline, color: Colors.red),
-            SizedBox(width: 8),
-            Text('Campos inválidos', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-          ]),
-          content: Text(mensagem, style: const TextStyle(fontSize: 13, height: 1.6)),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Entendi'))],
-        ));
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Row(children: [
-            const Icon(Icons.error_outline, color: Colors.white, size: 18),
-            const SizedBox(width: 8),
-            Expanded(child: Text(mensagem)),
-          ]),
-          backgroundColor: Colors.red[700],
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 4),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ));
-      }
+      AppNotifier.instance.error(vm.error ?? 'Não foi possível salvar o pet.');
     }
   }
 
@@ -258,368 +262,439 @@ class _PetFormPageState extends State<PetFormPage> {
     final vm = context.watch<PetViewModel>();
 
     if (widget.isEditing && vm.isLoading && !_loaded) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator(color: Color(0xFFCC6633))));
+      return const ColoredBox(
+        color: AppTheme.background,
+        child: LoadingView(message: 'Carregando pet...'),
+      );
     }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F3F0),
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(64),
-        child: Container(
-          color: Colors.white,
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-              child: Row(children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-                  onPressed: () => Navigator.pop(context),
+    return ColoredBox(
+      color: AppTheme.background,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 980),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                PageHeader(
+                  title: widget.isEditing ? 'Editar pet' : 'Cadastrar novo pet',
+                  subtitle: 'Preencha os dados do animal para publicá-lo.',
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back_rounded),
+                    onPressed: () => context.go('/pets'),
+                    tooltip: 'Voltar',
+                  ),
                 ),
-                Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-                  Text('Painel da ONG', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey[500])),
-                  Text(widget.isEditing ? 'Editar pet' : 'Cadastrar novo pet',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1A1A1A))),
-                ]),
-              ]),
+                const SizedBox(height: AppSpacing.xl),
+                _fotosSection(),
+                const SizedBox(height: AppSpacing.lg),
+                _identificacaoSection(),
+                const SizedBox(height: AppSpacing.lg),
+                _saudeSection(),
+                const SizedBox(height: AppSpacing.lg),
+                _personalidadeSection(),
+                const SizedBox(height: AppSpacing.xl),
+                _actions(vm),
+                const SizedBox(height: AppSpacing.xxl),
+              ],
             ),
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(children: [
-          _Section(emoji: '📸', title: 'Fotos', child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  const spacing = 8.0;
-                  final slotSize = (constraints.maxWidth - spacing * 3) / 4;
-                  return Wrap(
-                    spacing: spacing,
-                    runSpacing: spacing,
-                    children: List.generate(8, (i) {
-                      final hasPhoto = _fotosBytes[i] != null;
-                      final hasUrl = _fotosUrls[i] != null;
-                      final hasAny = hasPhoto || hasUrl;
-                      final isMain = i == 0;
+    );
+  }
 
-                      ImageProvider? imageProvider;
-                      if (hasPhoto) {
-                        imageProvider = MemoryImage(_fotosBytes[i]!);
-                      } else if (hasUrl) {
-                        imageProvider = NetworkImage(_fotosUrls[i]!);
-                      }
+  Widget _fotosSection() {
+    return SectionCard(
+      title: 'Fotos',
+      subtitle: 'Mínimo 1 foto · JPG, PNG ou WEBP · até 5MB cada',
+      icon: Icons.photo_library_rounded,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LayoutBuilder(
+            builder: (context, c) {
+              const spacing = 10.0;
+              final cols = (c.maxWidth / 130).floor().clamp(2, 8);
+              final slot = (c.maxWidth - spacing * (cols - 1)) / cols;
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: [for (var i = 0; i < 8; i++) _photoSlot(i, slot)],
+              );
+            },
+          ),
+          if (_erroFoto != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 10, left: 2),
+              child: Text(
+                _erroFoto!,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.destructive,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 
-                      return GestureDetector(
-                        onTap: () => _pickFoto(i),
-                        child: SizedBox(
-                          width: slotSize,
-                          height: slotSize,
-                          child: Stack(
-                            children: [
-                              Container(
-                                width: slotSize,
-                                height: slotSize,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFEEEAE6),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: isMain && _erroFoto != null
-                                      ? Border.all(color: Colors.red, width: 1.5)
-                                      : null,
-                                  image: imageProvider != null
-                                      ? DecorationImage(
-                                          image: imageProvider,
-                                          fit: BoxFit.cover,
-                                        )
-                                      : null,
-                                ),
-                                child: hasAny
-                                    ? null
-                                    : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                        Icon(Icons.add_photo_alternate_outlined, size: 22, color: Colors.grey[400]),
-                                        if (isMain) Text('Principal', style: TextStyle(fontSize: 8, color: Colors.grey[400])),
-                                      ]),
-                              ),
-                              if (hasAny)
-                                Positioned(
-                                  top: 4, right: 4,
-                                  child: GestureDetector(
-                                    onTap: () => _removeFoto(i),
-                                    child: Container(
-                                      decoration: const BoxDecoration(
-                                        color: Colors.black54,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      padding: const EdgeInsets.all(3),
-                                      child: const Icon(Icons.close, size: 12, color: Colors.white),
-                                    ),
-                                  ),
-                                ),
-                              if (isMain && hasAny)
-                                Positioned(
-                                  bottom: 4, left: 4,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black54,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: const Text('Principal', style: TextStyle(fontSize: 8, color: Colors.white)),
-                                  ),
-                                ),
-                            ],
-                          ),
+  Widget _photoSlot(int i, double size) {
+    final img = _slotImage(i);
+    final isMain = i == 0;
+    final hasAny = img != null;
+    final errorBorder = isMain && _erroFoto != null && !hasAny;
+
+    final Color borderColor = errorBorder
+        ? AppTheme.destructive
+        : (isMain && hasAny ? AppTheme.primary : AppTheme.border);
+
+    return GestureDetector(
+      onTap: () => _pickFoto(i),
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: Stack(
+          children: [
+            Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: AppTheme.inputFill,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: borderColor,
+                  width: (isMain && hasAny) || errorBorder ? 1.6 : 1,
+                ),
+                image: img != null
+                    ? DecorationImage(image: img, fit: BoxFit.cover)
+                    : null,
+              ),
+              child: hasAny
+                  ? null
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_photo_alternate_outlined,
+                          size: 22,
+                          color: AppTheme.mutedForeground.withOpacity(0.6),
                         ),
-                      );
-                    }),
-                  );
-                },
-              ),
-              const SizedBox(height: 6),
-              Text('Mínimo 1 foto. JPG, PNG, WEBP · máx. 5MB',
-                style: TextStyle(fontSize: 10, color: Colors.grey[400])),
-              if (_erroFoto != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4, left: 4),
-                  child: Text(_erroFoto!, style: const TextStyle(fontSize: 11, color: Colors.red)),
-                ),
-            ],
-          )),
-          const SizedBox(height: 16),
-
-          _Section(emoji: '🏷️', title: 'Identificação', child: Column(children: [
-            _Field(label: 'Nome do pet *', child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Input(controller: _nomeController, hint: 'Nome do pet', hasError: _erroNome != null),
-                if (_erroNome != null) Padding(
-                  padding: const EdgeInsets.only(top: 4, left: 4),
-                  child: Text(_erroNome!, style: const TextStyle(fontSize: 11, color: Colors.red)),
-                ),
-              ],
-            )),
-            const SizedBox(height: 14),
-            _Field(label: 'Espécie *', child: _Select(
-              value: _especie,
-              items: const [
-                DropdownMenuItem(value: 'cao', child: Text('Cão')),
-                DropdownMenuItem(value: 'gato', child: Text('Gato')),
-                DropdownMenuItem(value: 'outro', child: Text('Outro')),
-              ],
-              onChanged: (v) => setState(() => _especie = v!),
-            )),
-            const SizedBox(height: 14),
-            _Field(label: 'Raça', child: _Input(controller: _racaController, hint: 'Ex: Golden Retriever')),
-            const SizedBox(height: 14),
-            _Field(label: 'Porte *', child: _Select(
-              value: _porte,
-              items: const [
-                DropdownMenuItem(value: 'pequeno', child: Text('Pequeno (<10kg)')),
-                DropdownMenuItem(value: 'medio', child: Text('Médio (10-25kg)')),
-                DropdownMenuItem(value: 'grande', child: Text('Grande (>25kg)')),
-              ],
-              onChanged: (v) => setState(() => _porte = v!),
-            )),
-            const SizedBox(height: 14),
-            _Field(label: 'Sexo *', child: _Select(
-              value: _sexo,
-              items: const [
-                DropdownMenuItem(value: 'macho', child: Text('Macho')),
-                DropdownMenuItem(value: 'femea', child: Text('Fêmea')),
-              ],
-              onChanged: (v) => setState(() => _sexo = v!),
-            )),
-            const SizedBox(height: 14),
-            _Field(label: 'Idade *', child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(children: [
-                  Expanded(child: _Input(controller: _anosController, hint: 'Anos', keyboardType: TextInputType.number, hasError: _erroIdade != null)),
-                  const SizedBox(width: 10),
-                  Expanded(child: _Input(controller: _mesesController, hint: 'Meses', keyboardType: TextInputType.number, hasError: _erroIdade != null)),
-                ]),
-                if (_erroIdade != null) Padding(
-                  padding: const EdgeInsets.only(top: 4, left: 4),
-                  child: Text(_erroIdade!, style: const TextStyle(fontSize: 11, color: Colors.red)),
-                ),
-              ],
-            )),
-            if (widget.isEditing) ...[
-              const SizedBox(height: 14),
-              _Field(label: 'Status', child: _Select(
-                value: _status,
-                items: const [
-                  DropdownMenuItem(value: 'disponivel', child: Text('Disponível')),
-                  DropdownMenuItem(value: 'em_processo', child: Text('Em processo')),
-                  DropdownMenuItem(value: 'adotado', child: Text('Adotado')),
-                ],
-                onChanged: (v) => setState(() => _status = v!),
-              )),
-            ],
-          ])),
-          const SizedBox(height: 16),
-
-          _Section(emoji: '💉', title: 'Saúde', child: Column(children: [
-            _ToggleRow(label: 'Vacinado', value: _vacinado, onChanged: (v) => setState(() => _vacinado = v)),
-            const SizedBox(height: 8),
-            _ToggleRow(label: 'Castrado', value: _castrado, onChanged: (v) => setState(() => _castrado = v)),
-          ])),
-          const SizedBox(height: 16),
-
-          _Section(emoji: '🐾', title: 'Personalidade', child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Selecione até 6 características', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
-              const SizedBox(height: 10),
-              Wrap(spacing: 8, runSpacing: 8, children: _temperamentos.map((t) {
-                final sel = _selectedTemps.contains(t);
-                return GestureDetector(
-                  onTap: () => _toggleTemp(t),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: sel ? const Color(0xFFCC6633) : const Color(0xFFEEEAE6),
-                      borderRadius: BorderRadius.circular(20),
+                        if (isMain)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 2),
+                            child: Text(
+                              'Principal',
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: AppTheme.mutedForeground,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                    child: Text(t, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
-                        color: sel ? Colors.white : Colors.grey[600])),
+            ),
+            if (hasAny)
+              Positioned(
+                top: 4,
+                right: 4,
+                child: GestureDetector(
+                  onTap: () => _removeFoto(i),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(3),
+                    child: const Icon(Icons.close, size: 13, color: Colors.white),
                   ),
-                );
-              }).toList()),
-              const SizedBox(height: 14),
-              _Field(label: 'Descrição livre', child: TextField(
-                controller: _descricaoController,
-                maxLines: 4, maxLength: 500,
-                decoration: InputDecoration(
-                  hintText: 'Conte a história e personalidade do pet...',
-                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
-                  filled: true, fillColor: const Color(0xFFEEEAE6),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  contentPadding: const EdgeInsets.all(14),
                 ),
-                style: const TextStyle(fontSize: 13),
-              )),
+              ),
+            if (isMain && hasAny)
+              Positioned(
+                bottom: 4,
+                left: 4,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'Principal',
+                    style: TextStyle(fontSize: 9, color: Colors.white),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _identificacaoSection() {
+    return SectionCard(
+      title: 'Identificação',
+      icon: Icons.badge_rounded,
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final wide = c.maxWidth >= 560;
+          return Column(
+            children: [
+              TextFieldThemed(
+                label: 'Nome do pet *',
+                hint: 'Ex: Thor',
+                controller: _nomeController,
+                errorText: _erroNome,
+              ),
+              const SizedBox(height: 16),
+              _two(
+                wide,
+                AppDropdownField<String>(
+                  label: 'Espécie *',
+                  value: _especie,
+                  items: const [
+                    AppDropdownItem('cao', 'Cão'),
+                    AppDropdownItem('gato', 'Gato'),
+                    AppDropdownItem('outro', 'Outro'),
+                  ],
+                  onChanged: (v) => setState(() => _especie = v ?? _especie),
+                ),
+                TextFieldThemed(
+                  label: 'Raça',
+                  hint: 'Ex: Golden Retriever',
+                  controller: _racaController,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _two(
+                wide,
+                AppDropdownField<String>(
+                  label: 'Porte *',
+                  value: _porte,
+                  items: const [
+                    AppDropdownItem('pequeno', 'Pequeno (até 10kg)'),
+                    AppDropdownItem('medio', 'Médio (10–25kg)'),
+                    AppDropdownItem('grande', 'Grande (acima de 25kg)'),
+                  ],
+                  onChanged: (v) => setState(() => _porte = v ?? _porte),
+                ),
+                AppDropdownField<String>(
+                  label: 'Sexo *',
+                  value: _sexo,
+                  items: const [
+                    AppDropdownItem('macho', 'Macho'),
+                    AppDropdownItem('femea', 'Fêmea'),
+                  ],
+                  onChanged: (v) => setState(() => _sexo = v ?? _sexo),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _idadeField(),
+              if (widget.isEditing) ...[
+                const SizedBox(height: 16),
+                _two(
+                  wide,
+                  AppDropdownField<String>(
+                    label: 'Status',
+                    value: _status,
+                    items: const [
+                      AppDropdownItem('disponivel', 'Disponível'),
+                      AppDropdownItem('em_processo', 'Em processo'),
+                      AppDropdownItem('adotado', 'Adotado'),
+                    ],
+                    onChanged: (v) => setState(() => _status = v ?? _status),
+                  ),
+                  const SizedBox.shrink(),
+                ),
+              ],
             ],
-          )),
-          const SizedBox(height: 24),
+          );
+        },
+      ),
+    );
+  }
 
-          Row(children: [
-            Expanded(child: OutlinedButton(
-              onPressed: () => Navigator.pop(context),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                side: const BorderSide(color: Color(0xFFCC6633)),
+  Widget _idadeField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: TextFieldThemed(
+                label: 'Idade — anos *',
+                hint: 'Anos',
+                controller: _anosController,
+                keyboardType: TextInputType.number,
               ),
-              child: const Text('Cancelar', style: TextStyle(fontWeight: FontWeight.w700, color: Color(0xFFCC6633))),
-            )),
+            ),
             const SizedBox(width: 12),
-            Expanded(flex: 2, child: GestureDetector(
-              onTap: vm.isSaving ? null : _submit,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [Color(0xFFCC6633), Color(0xFFE8923E)]),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [BoxShadow(color: const Color(0xFFCC6633), blurRadius: 12, offset: const Offset(0, 4))],
-                ),
-                child: Center(child: vm.isSaving
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : Text(widget.isEditing ? 'Salvar alterações' : 'Publicar 🐾',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14))),
+            Expanded(
+              child: TextFieldThemed(
+                label: 'Meses *',
+                hint: 'Meses',
+                controller: _mesesController,
+                keyboardType: TextInputType.number,
               ),
-            )),
-          ]),
-          const SizedBox(height: 32),
-        ]),
+            ),
+          ],
+        ),
+        if (_erroIdade != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, left: 4),
+            child: Text(
+              _erroIdade!,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppTheme.destructive,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _saudeSection() {
+    return SectionCard(
+      title: 'Saúde',
+      icon: Icons.medical_services_rounded,
+      child: Column(
+        children: [
+          _ToggleRow(
+            label: 'Vacinado',
+            value: _vacinado,
+            onChanged: (v) => setState(() => _vacinado = v),
+          ),
+          const SizedBox(height: 10),
+          _ToggleRow(
+            label: 'Castrado',
+            value: _castrado,
+            onChanged: (v) => setState(() => _castrado = v),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _personalidadeSection() {
+    return SectionCard(
+      title: 'Personalidade',
+      subtitle: 'Selecione até 6 características',
+      icon: Icons.pets_rounded,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final t in _temperamentos)
+                _TempChip(
+                  label: t,
+                  selected: _selectedTemps.contains(t),
+                  onTap: () => _toggleTemp(t),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          TextFieldThemed(
+            label: 'Descrição livre',
+            hint: 'Conte a história e a personalidade do pet...',
+            controller: _descricaoController,
+            maxLines: 4,
+            minLines: 4,
+            maxLength: 500,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actions(PetViewModel vm) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: () => context.go('/pets'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(0, 54),
+            ),
+            child: const Text('Cancelar'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 2,
+          child: PrimaryButton(
+            label: widget.isEditing ? 'Salvar alterações' : 'Publicar pet',
+            trailingIcon: Icons.check_rounded,
+            variant: PrimaryButtonVariant.sage,
+            isLoading: vm.isSaving,
+            onPressed: _submit,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Dois campos lado a lado em telas largas; empilhados em estreitas.
+  Widget _two(bool wide, Widget a, Widget b) {
+    if (!wide) {
+      return Column(
+        children: [a, const SizedBox(height: 16), b],
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: a),
+        const SizedBox(width: 16),
+        Expanded(child: b),
+      ],
     );
   }
 }
 
-class _Section extends StatelessWidget {
-  final String emoji, title;
-  final Widget child;
-  const _Section({required this.emoji, required this.title, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity, padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white, borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: Colors.black, blurRadius: 10, offset: const Offset(0, 2))],
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('$emoji $title', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Color(0xFF1A1A1A))),
-        const SizedBox(height: 14),
-        child,
-      ]),
-    );
-  }
-}
-
-class _Field extends StatelessWidget {
+class _TempChip extends StatelessWidget {
   final String label;
-  final Widget child;
-  const _Field({required this.label, required this.child});
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _TempChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey[500])),
-      const SizedBox(height: 6),
-      child,
-    ]);
-  }
-}
-
-class _Input extends StatelessWidget {
-  final TextEditingController controller;
-  final String hint;
-  final TextInputType? keyboardType;
-  final bool hasError;
-  const _Input({required this.controller, required this.hint, this.keyboardType, this.hasError = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller, keyboardType: keyboardType,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
-        filled: true,
-        fillColor: hasError ? Colors.red : const Color(0xFFEEEAE6),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-          borderSide: hasError ? const BorderSide(color: Colors.red, width: 1.5) : BorderSide.none),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-          borderSide: hasError ? const BorderSide(color: Colors.red, width: 1.5) : BorderSide.none),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-          borderSide: hasError ? const BorderSide(color: Colors.red, width: 1.5) : const BorderSide(color: Color(0xFFCC6633), width: 1.5)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      ),
-      style: const TextStyle(fontSize: 13),
-    );
-  }
-}
-
-class _Select<T> extends StatelessWidget {
-  final T value;
-  final List<DropdownMenuItem<T>> items;
-  final ValueChanged<T?> onChanged;
-  const _Select({required this.value, required this.items, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(color: const Color(0xFFEEEAE6), borderRadius: BorderRadius.circular(12)),
-      child: DropdownButton<T>(
-        value: value, items: items, onChanged: onChanged,
-        isExpanded: true, underline: const SizedBox(),
-        style: const TextStyle(fontSize: 13, color: Color(0xFF1A1A1A)),
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? AppTheme.primary : AppTheme.surface,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: selected ? AppTheme.primary : AppTheme.border,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: selected ? Colors.white : AppTheme.foreground,
+          ),
+        ),
       ),
     );
   }
@@ -629,17 +704,39 @@ class _ToggleRow extends StatelessWidget {
   final String label;
   final bool value;
   final ValueChanged<bool> onChanged;
-  const _ToggleRow({required this.label, required this.value, required this.onChanged});
+
+  const _ToggleRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(color: const Color(0xFFEEEAE6), borderRadius: BorderRadius.circular(12)),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A1A1A))),
-        Switch(value: value, onChanged: onChanged, activeThumbColor: const Color(0xFFCC6633)),
-      ]),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppTheme.inputFill,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.foreground,
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeThumbColor: AppTheme.primary,
+          ),
+        ],
+      ),
     );
   }
 }

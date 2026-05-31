@@ -21,6 +21,13 @@ Identidade visual derivada do protótipo Lovable. Todas as cores são `static co
 
 Tom geral: acolhedor, quente, "pet-friendly" — laranja+dourado+creme com sage como complemento.
 
+## Tokens de status e dimensões
+
+Além do `AppTheme`, dois arquivos centralizam tokens que antes ficavam espalhados/hardcoded por tela:
+
+- **`core/theme/app_status_colors.dart`** — `AppStatusColors.pet(status)` (`disponivel`/`em_processo`/`adotado`) e `AppStatusColors.request(status)` (`received`/`in_analysis`/`approved`/`rejected`) mapeiam status para cores do tema; `requestLabel(status)` dá o rótulo PT. Use sempre estes em vez de `Color(0xFF...)` por tela.
+- **`core/theme/app_dimens.dart`** — `AppSpacing` (`xs`..`xxl`, `contentMaxWidth`, `sidebarWidth`, `sidebarExpandBreakpoint`) e `AppRadius` (`field`=20, `card`=28, `pill`).
+
 ## Fontes
 
 - **Quicksand** — display (h1 a h6, títulos). Pesos 400-900.
@@ -32,11 +39,15 @@ Ambas via `google_fonts: ^6.2.1`.
 final textTheme = GoogleFonts.nunitoTextTheme(base.textTheme).copyWith(
   displayLarge:    GoogleFonts.quicksand(fontSize: 44, fontWeight: FontWeight.w800, ...),
   displayMedium:   GoogleFonts.quicksand(fontSize: 36, fontWeight: FontWeight.w800, ...),
+  displaySmall:    GoogleFonts.quicksand(fontSize: 28, fontWeight: FontWeight.w800, ...),
   headlineLarge:   GoogleFonts.quicksand(fontSize: 30, fontWeight: FontWeight.w700, ...),
   headlineMedium:  GoogleFonts.quicksand(fontSize: 24, fontWeight: FontWeight.w700, ...),
   headlineSmall:   GoogleFonts.quicksand(fontSize: 20, fontWeight: FontWeight.w700, ...),
   titleLarge:      GoogleFonts.quicksand(fontSize: 18, fontWeight: FontWeight.w600, ...),
+  titleMedium:     GoogleFonts.quicksand(fontSize: 16, fontWeight: FontWeight.w700, ...),
   labelLarge:      GoogleFonts.nunito(fontSize: 14, fontWeight: FontWeight.w600, ...),
+  bodyLarge:       GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.w400, ...),
+  bodyMedium:      GoogleFonts.nunito(fontSize: 14, fontWeight: FontWeight.w400, ...),
 );
 ```
 
@@ -225,6 +236,19 @@ Usado no `Stack` da `RegisterProtetorOngPage` atrás de tudo.
 ### `AppNotificationsHost`
 
 Detalhes em `NOTIFICATIONS.md`.
+
+### Componentes do painel
+
+Introduzidos na padronização das telas internas (área logada). A área logada **herda os tokens** do design language do login/registro (cores, tipografia, raios, sombras) — mas **não** a estrutura de marketing (hero panel + patinhas); seu esqueleto é um shell de aplicação.
+
+- **`OrgShell`** — shell do painel: sidebar lateral fixa (vira `Drawer` em telas estreitas), item ativo detectado pela rota. Montado via `ShellRoute` (ver `ROUTING.md`). Substitui o antigo `OrgLayout` (bottom-nav com cores fora do tema).
+- **`PageHeader`** — título + subtítulo + ações de cada tela (o shell não tem AppBar com título).
+- **`SectionCard`** — card de seção (surface, raio 28, sombra suave, cabeçalho opcional). Base de forms e dashboard.
+- **`StatusPill`** — badge de status arredondado, cor vinda de `AppStatusColors`. Unifica os badges antes duplicados em pets e solicitações.
+- **`SearchField`** / **`AppDropdownField<T>`** — busca e select com o visual do `TextFieldThemed`.
+- **`state_views.dart`** — `LoadingView`, `EmptyState`, `ErrorStateView` padronizados.
+- **`confirm_dialog.dart`** — `showConfirmDialog(...)` themed para ações destrutivas.
+- **`DashboardStatCard`** / **`MiniBarChart`** — cards de KPI e gráfico de barras da dashboard (sem dependência externa).
 
 ## Layouts recorrentes
 
