@@ -21,6 +21,14 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
+  ChatViewModel? _chatVm;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _chatVm ??= context.read<ChatViewModel>();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -35,7 +43,7 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
-    context.read<ChatViewModel>().stopPolling();
+    _chatVm?.stopPolling();
     super.dispose();
   }
 
