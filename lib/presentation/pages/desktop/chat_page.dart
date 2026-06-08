@@ -434,7 +434,7 @@ class _ConversationHeader extends StatelessWidget {
   Future<void> _confirmClose(BuildContext context) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Encerrar conversa?'),
         content: const Text(
@@ -442,9 +442,9 @@ class _ConversationHeader extends StatelessWidget {
           'O histórico continuará visível.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Cancelar')),
           TextButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppTheme.destructive),
             child: const Text('Encerrar'),
           ),
