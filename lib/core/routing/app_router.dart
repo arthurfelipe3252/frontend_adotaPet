@@ -12,9 +12,10 @@ import 'package:adota_pet/presentation/pages/desktop/splash_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/org_pet_list_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/pet_form_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/adoption_request_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/chat_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/user_settings_page.dart';
-import 'package:adota_pet/presentation/pages/desktop/catalog_page.dart';
-import 'package:adota_pet/presentation/pages/desktop/pet_detail_page.dart';
+import 'package:adota_pet/presentation/pages/mobile/catalog_page.dart';
+import 'package:adota_pet/presentation/pages/mobile/pet_detail_page.dart';
 import 'package:adota_pet/presentation/pages/mobile/login_page.dart' as mobile;
 import 'package:adota_pet/presentation/pages/mobile/register_adotante_page.dart'
     as mobile;
@@ -122,6 +123,22 @@ GoRouter buildAppRouter(AuthViewModel auth) {
                 ? const AdoptionRequestPage()
                 : const _MobilePlaceholder(
                     message: 'Solicitações mobile em breve',
+                  ),
+          ),
+          GoRoute(
+            path: '/chat',
+            builder: (_, __) => kIsWeb
+                ? const ChatPage()
+                : const _MobilePlaceholder(
+                    message: 'Chat disponível na versão web.',
+                  ),
+          ),
+          GoRoute(
+            path: '/chat/:id',
+            builder: (_, state) => kIsWeb
+                ? ChatPage(conversationId: state.pathParameters['id'])
+                : const _MobilePlaceholder(
+                    message: 'Chat disponível na versão web.',
                   ),
           ),
           GoRoute(

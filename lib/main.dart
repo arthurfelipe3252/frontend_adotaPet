@@ -15,6 +15,8 @@ import 'data/datasources/pet_cache_datasource.dart';
 import 'data/datasources/pet_remote_datasource.dart';
 import 'data/datasources/users_remote_datasource.dart';
 import 'data/datasources/reports_remote_datasource.dart';
+import 'data/datasources/chat_remote_datasource.dart';
+import 'presentation/viewmodels/chat_viewmodel.dart';
 
 import 'data/repositories/adoption_request_repository_impl.dart';
 import 'data/repositories/reports_repository_impl.dart';
@@ -73,6 +75,9 @@ Future<void> main() async {
   final reportsRemote = ReportsRemoteDatasource(httpClient);
   final reportsRepository = ReportsRepositoryImpl(reportsRemote);
 
+  final chatRemote = ChatRemoteDatasource(httpClient);
+  final chatViewModel = ChatViewModel(chatRemote);
+
   runApp(
     MultiProvider(
       providers: [
@@ -107,6 +112,8 @@ Future<void> main() async {
         ChangeNotifierProvider(
           create: (_) => CatalogViewModel(petRepository),
         ),
+
+        ChangeNotifierProvider<ChatViewModel>.value(value: chatViewModel),
 
         ChangeNotifierProvider(
           create: (_) => UserSettingsViewModel(
