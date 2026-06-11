@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:adota_pet/presentation/pages/desktop/forgot_password_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/reports_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/dashboard_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/login_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/register_protetor_ong_page.dart';
@@ -147,6 +148,14 @@ GoRouter buildAppRouter(AuthViewModel auth) {
                 ? const UserSettingsPage()
                 : const _MobilePlaceholder(
                     message: 'Configurações mobile em breve',
+                  ),
+          ),
+          GoRoute(
+            path: '/reports',
+            builder: (_, __) => kIsWeb
+                ? const ReportsPage()
+                : const _MobilePlaceholder(
+                    message: 'Relatórios disponíveis na versão web.',
                   ),
           ),
         ],

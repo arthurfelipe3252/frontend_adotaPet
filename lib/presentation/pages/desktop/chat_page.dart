@@ -1,3 +1,5 @@
+// ignore_for_file: unused_import
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -136,7 +138,7 @@ class _ConversationList extends StatelessWidget {
                     : ListView.separated(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         itemCount: vm.conversations.length,
-                        separatorBuilder: (_, __) =>
+                        separatorBuilder: (_, _) =>
                             const Divider(height: 1, indent: 16, endIndent: 16),
                         itemBuilder: (_, i) {
                           final conv = vm.conversations[i];
