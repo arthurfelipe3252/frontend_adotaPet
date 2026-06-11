@@ -46,7 +46,7 @@ class _ChatPageState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<ChatViewModel>();
-    
+
     // Mostra a tela de mensagens caso haja uma conversa ativa.
     if (vm.activeConversation != null) {
       return PopScope(
@@ -59,11 +59,9 @@ class _ChatPageState extends State<ChatPage> {
         child: const _MessagePanel(),
       );
     }
-    
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chat'),
-      ),
+      appBar: AppBar(title: const Text('Chat')),
       backgroundColor: AppTheme.background,
       body: const _ConversationList(),
     );
@@ -81,7 +79,10 @@ class _ConversationList extends StatelessWidget {
 
     if (vm.isLoadingConversations) {
       return const Center(
-        child: CircularProgressIndicator(color: AppTheme.primary, strokeWidth: 2),
+        child: CircularProgressIndicator(
+          color: AppTheme.primary,
+          strokeWidth: 2,
+        ),
       );
     }
 
@@ -116,7 +117,8 @@ class _ConversationList extends StatelessWidget {
           final conv = vm.conversations[i];
           return _ConversationTile(
             conversation: conv,
-            onTap: () => context.read<ChatViewModel>().openConversation(conv.id),
+            onTap: () =>
+                context.read<ChatViewModel>().openConversation(conv.id),
           );
         },
       ),
@@ -128,18 +130,15 @@ class _ConversationTile extends StatelessWidget {
   final Conversation conversation;
   final VoidCallback onTap;
 
-  const _ConversationTile({
-    required this.conversation,
-    required this.onTap,
-  });
+  const _ConversationTile({required this.conversation, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     // Para simplificar, assumimos o nome do adotante ou contato primário.
     // Pode mudar de acordo com quem está logado (ONG ou adotante),
     // mas o desktop exibia adopterNome ou 'Adotante'.
-    final nomeContato = conversation.adopterNome?.isNotEmpty == true 
-        ? conversation.adopterNome! 
+    final nomeContato = conversation.adopterNome?.isNotEmpty == true
+        ? conversation.adopterNome!
         : 'Adotante';
 
     return InkWell(
@@ -182,7 +181,10 @@ class _ConversationTile extends StatelessWidget {
                       ),
                       if (!conversation.isActive)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
                           margin: const EdgeInsets.only(left: 8),
                           decoration: BoxDecoration(
                             color: AppTheme.border,
@@ -190,7 +192,11 @@ class _ConversationTile extends StatelessWidget {
                           ),
                           child: const Text(
                             'Encerrada',
-                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.mutedForeground),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.mutedForeground,
+                            ),
                           ),
                         ),
                     ],
@@ -269,9 +275,9 @@ class _MessagePanelState extends State<_MessagePanel> {
     }
 
     _scrollToBottom();
-    
-    final nomeContato = conv.adopterNome?.isNotEmpty == true 
-        ? conv.adopterNome! 
+
+    final nomeContato = conv.adopterNome?.isNotEmpty == true
+        ? conv.adopterNome!
         : 'Adotante';
 
     return Scaffold(
@@ -302,12 +308,19 @@ class _MessagePanelState extends State<_MessagePanel> {
                 children: [
                   Text(
                     nomeContato,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   if (!conv.isActive)
                     const Text(
                       'Encerrada',
-                      style: TextStyle(fontSize: 12, color: AppTheme.mutedForeground, fontWeight: FontWeight.normal),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.mutedForeground,
+                        fontWeight: FontWeight.normal,
+                      ),
                     ),
                 ],
               ),
@@ -321,30 +334,42 @@ class _MessagePanelState extends State<_MessagePanel> {
             // Área de mensagens
             Expanded(
               child: vm.isLoadingMessages
-                  ? const Center(child: CircularProgressIndicator(color: AppTheme.primary, strokeWidth: 2))
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AppTheme.primary,
+                        strokeWidth: 2,
+                      ),
+                    )
                   : vm.messages.isEmpty
-                      ? const EmptyState(
-                          icon: Icons.chat_bubble_outline_rounded,
-                          title: 'Nenhuma mensagem',
-                          message: 'Envie a primeira mensagem para começar.',
-                        )
-                      : ListView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          itemCount: vm.messages.length,
-                          itemBuilder: (_, i) {
-                            final msg = vm.messages[i];
-                            final isMine = msg.senderId == myUserId;
-                            final showDate = i == 0 ||
-                                !_sameDay(vm.messages[i - 1].createdAt, msg.createdAt);
-                            return Column(
-                              children: [
-                                if (showDate) _DateDivider(date: msg.createdAt),
-                                _MessageBubble(message: msg, isMine: isMine),
-                              ],
+                  ? const EmptyState(
+                      icon: Icons.chat_bubble_outline_rounded,
+                      title: 'Nenhuma mensagem',
+                      message: 'Envie a primeira mensagem para começar.',
+                    )
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                      itemCount: vm.messages.length,
+                      itemBuilder: (_, i) {
+                        final msg = vm.messages[i];
+                        final isMine = msg.senderId == myUserId;
+                        final showDate =
+                            i == 0 ||
+                            !_sameDay(
+                              vm.messages[i - 1].createdAt,
+                              msg.createdAt,
                             );
-                          },
-                        ),
+                        return Column(
+                          children: [
+                            if (showDate) _DateDivider(date: msg.createdAt),
+                            _MessageBubble(message: msg, isMine: isMine),
+                          ],
+                        );
+                      },
+                    ),
             ),
             const Divider(height: 1),
 
@@ -362,7 +387,10 @@ class _MessagePanelState extends State<_MessagePanel> {
                 color: AppTheme.surface,
                 child: const Text(
                   'Esta conversa foi encerrada.',
-                  style: TextStyle(color: AppTheme.mutedForeground, fontSize: 14),
+                  style: TextStyle(
+                    color: AppTheme.mutedForeground,
+                    fontSize: 14,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -392,7 +420,9 @@ class _MessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
-        mainAxisAlignment: isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isMine
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMine) ...[
@@ -403,25 +433,38 @@ class _MessageBubble extends StatelessWidget {
                 (message.senderNome?.isNotEmpty == true)
                     ? message.senderNome![0].toUpperCase()
                     : '?',
-                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.mutedForeground),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.mutedForeground,
+                ),
               ),
             ),
             const SizedBox(width: 8),
           ],
           Flexible(
             child: Column(
-              crossAxisAlignment: isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              crossAxisAlignment: isMine
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
               children: [
                 if (!isMine && message.senderNome != null)
                   Padding(
                     padding: const EdgeInsets.only(left: 4, bottom: 4),
                     child: Text(
                       message.senderNome!,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.mutedForeground),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.mutedForeground,
+                      ),
                     ),
                   ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: isMine ? AppTheme.primary : AppTheme.surface,
                     border: isMine ? null : Border.all(color: AppTheme.border),
@@ -447,14 +490,21 @@ class _MessageBubble extends StatelessWidget {
                   children: [
                     Text(
                       time,
-                      style: const TextStyle(fontSize: 11, color: AppTheme.mutedForeground),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.mutedForeground,
+                      ),
                     ),
                     if (isMine) ...[
                       const SizedBox(width: 4),
                       Icon(
-                        message.isRead ? Icons.done_all_rounded : Icons.done_rounded,
+                        message.isRead
+                            ? Icons.done_all_rounded
+                            : Icons.done_rounded,
                         size: 14,
-                        color: message.isRead ? AppTheme.sage : AppTheme.mutedForeground,
+                        color: message.isRead
+                            ? AppTheme.sage
+                            : AppTheme.mutedForeground,
                       ),
                     ],
                   ],
@@ -488,17 +538,23 @@ class _DateDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Row(children: [
-        const Expanded(child: Divider()),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            _label,
-            style: const TextStyle(fontSize: 12, color: AppTheme.mutedForeground, fontWeight: FontWeight.w600),
+      child: Row(
+        children: [
+          const Expanded(child: Divider()),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              _label,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppTheme.mutedForeground,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-        ),
-        const Expanded(child: Divider()),
-      ]),
+          const Expanded(child: Divider()),
+        ],
+      ),
     );
   }
 }
@@ -543,7 +599,10 @@ class _MessageInput extends StatelessWidget {
                   decoration: const InputDecoration(
                     hintText: 'Mensagem...',
                     hintStyle: TextStyle(color: AppTheme.mutedForeground),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     border: InputBorder.none,
                     counterText: '',
                   ),
@@ -554,13 +613,18 @@ class _MessageInput extends StatelessWidget {
             Container(
               height: 48,
               width: 48,
-              margin: const EdgeInsets.only(bottom: 2), // Para alinhar pela base
+              margin: const EdgeInsets.only(
+                bottom: 2,
+              ), // Para alinhar pela base
               child: isSending
                   ? const Center(
                       child: SizedBox(
                         width: 24,
                         height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2.5, color: AppTheme.primary),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: AppTheme.primary,
+                        ),
                       ),
                     )
                   : ElevatedButton(
@@ -571,7 +635,11 @@ class _MessageInput extends StatelessWidget {
                         padding: EdgeInsets.zero,
                         elevation: 0,
                       ),
-                      child: const Icon(Icons.send_rounded, size: 20, color: Colors.white),
+                      child: const Icon(
+                        Icons.send_rounded,
+                        size: 20,
+                        color: Colors.white,
+                      ),
                     ),
             ),
           ],

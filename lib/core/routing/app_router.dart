@@ -12,8 +12,7 @@ import 'package:adota_pet/presentation/pages/desktop/splash_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/org_pet_list_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/pet_form_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/adoption_request_page.dart';
-import 'package:adota_pet/presentation/pages/desktop/chat_page.dart'
-    as desktop;
+import 'package:adota_pet/presentation/pages/desktop/chat_page.dart' as desktop;
 import 'package:adota_pet/presentation/pages/mobile/chat_page.dart' as mobile;
 import 'package:adota_pet/presentation/pages/desktop/user_settings_page.dart';
 import 'package:adota_pet/presentation/pages/mobile/catalog_page.dart';
@@ -129,9 +128,8 @@ GoRouter buildAppRouter(AuthViewModel auth) {
           ),
           GoRoute(
             path: '/chat',
-            builder: (_, __) => kIsWeb
-                ? const desktop.ChatPage()
-                : const mobile.ChatPage(),
+            builder: (_, __) =>
+                kIsWeb ? const desktop.ChatPage() : const mobile.ChatPage(),
           ),
           GoRoute(
             path: '/chat/:id',
@@ -182,8 +180,11 @@ class _MobilePlaceholder extends StatelessWidget {
             children: [
               const Text('🐾', style: TextStyle(fontSize: 56)),
               const SizedBox(height: 16),
-              Text(message, textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
             ],
           ),
         ),
