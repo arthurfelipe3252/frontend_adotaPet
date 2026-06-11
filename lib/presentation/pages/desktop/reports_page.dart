@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_web_libraries_in_flutter
 
 import 'dart:html' as html;
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -34,29 +35,40 @@ class _ReportsPageState extends State<ReportsPage> {
     });
   }
 
-  Future<void> _downloadXlsx() async {
-    final vm = context.read<ReportsViewModel>();
-    final bytes = await vm.buildXlsx();
-    if (bytes == null) return;
-
+  Future<void> _download(Uint8List bytes, String filename, String mime) async {
     if (kIsWeb) {
-      final blob = html.Blob([bytes],
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      final blob = html.Blob([bytes], mime);
       final url = html.Url.createObjectUrlFromBlob(blob);
       html.AnchorElement(href: url)
-        ..setAttribute('download', 'adotapet_relatorio.xlsx')
+        ..setAttribute('download', filename)
         ..click();
       html.Url.revokeObjectUrl(url);
     }
+  }
 
-    if (mounted && vm.exportError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(vm.exportError!),
-          backgroundColor: AppTheme.destructive,
-        ),
-      );
-    }
+  Future<void> _downloadXlsx() async {
+    final vm = context.read<ReportsViewModel>();
+    final bytes = await vm.buildXlsx();
+    if (bytes == null) { _showExportError(vm.exportError); return; }
+    await _download(
+      bytes,
+      'adotapet_relatorio.xlsx',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+  }
+
+  Future<void> _downloadCsv() async {
+    final vm = context.read<ReportsViewModel>();
+    final bytes = await vm.buildCsv();
+    if (bytes == null) { _showExportError(vm.exportError); return; }
+    await _download(bytes, 'adotapet_relatorio.csv', 'text/csv;charset=utf-8');
+  }
+
+  void _showExportError(String? msg) {
+    if (!mounted || msg == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: AppTheme.destructive),
+    );
   }
 
   @override
@@ -98,7 +110,8 @@ class _ReportsPageState extends State<ReportsPage> {
                     period: vm.period,
                     isExporting: vm.isExporting,
                     onPeriodChanged: vm.setPeriod,
-                    onExport: _downloadXlsx,
+                    onExportXlsx: _downloadXlsx,
+                    onExportCsv: _downloadCsv,
                   ),
                   const SizedBox(height: AppSpacing.xl),
 
@@ -206,13 +219,15 @@ class _ReportsHeader extends StatelessWidget {
   final ReportsPeriod period;
   final bool isExporting;
   final Future<void> Function(ReportsPeriod) onPeriodChanged;
-  final VoidCallback onExport;
+  final VoidCallback onExportXlsx;
+  final VoidCallback onExportCsv;
 
   const _ReportsHeader({
     required this.period,
     required this.isExporting,
     required this.onPeriodChanged,
-    required this.onExport,
+    required this.onExportXlsx,
+    required this.onExportCsv,
   });
 
   @override
@@ -239,30 +254,11 @@ class _ReportsHeader extends StatelessWidget {
       runSpacing: 10,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        // Seletor de período
         _PeriodSelector(current: period, onChange: onPeriodChanged),
-        // Botão de export
-        FilledButton.icon(
-          onPressed: isExporting ? null : onExport,
-          style: FilledButton.styleFrom(
-            backgroundColor: AppTheme.sage,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-          ),
-          icon: isExporting
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Icon(Icons.download_rounded, size: 18),
-          label: Text(isExporting ? 'Gerando...' : 'Exportar XLSX'),
+        _ExportMenuButton(
+          isExporting: isExporting,
+          onXlsx: onExportXlsx,
+          onCsv: onExportCsv,
         ),
       ],
     );
@@ -282,6 +278,100 @@ class _ReportsHeader extends StatelessWidget {
         ],
       );
     });
+  }
+}
+
+class _ExportMenuButton extends StatelessWidget {
+  final bool isExporting;
+  final VoidCallback onXlsx;
+  final VoidCallback onCsv;
+
+  const _ExportMenuButton({
+    required this.isExporting,
+    required this.onXlsx,
+    required this.onCsv,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final buttonStyle = FilledButton.styleFrom(
+      backgroundColor: AppTheme.sage,
+      foregroundColor: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    );
+
+    if (isExporting) {
+      return FilledButton.icon(
+        onPressed: null,
+        style: buttonStyle,
+        icon: const SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+        ),
+        label: const Text('Gerando...'),
+      );
+    }
+
+    return MenuAnchor(
+      builder: (context, controller, _) => FilledButton.icon(
+        onPressed: () =>
+            controller.isOpen ? controller.close() : controller.open(),
+        style: buttonStyle,
+        icon: const Icon(Icons.download_rounded, size: 18),
+        label: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Exportar'),
+            SizedBox(width: 4),
+            Icon(Icons.arrow_drop_down_rounded, size: 18),
+          ],
+        ),
+      ),
+      menuChildren: [
+        MenuItemButton(
+          leadingIcon: const Icon(Icons.table_chart_outlined,
+              size: 18, color: AppTheme.sage),
+          onPressed: onXlsx,
+          child: const Padding(
+            padding: EdgeInsets.symmetric(vertical: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Excel (.xlsx)',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 14)),
+                Text('6 abas com todos os dados',
+                    style: TextStyle(
+                        fontSize: 11, color: AppTheme.mutedForeground)),
+              ],
+            ),
+          ),
+        ),
+        MenuItemButton(
+          leadingIcon: const Icon(Icons.text_snippet_outlined,
+              size: 18, color: AppTheme.primary),
+          onPressed: onCsv,
+          child: const Padding(
+            padding: EdgeInsets.symmetric(vertical: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('CSV (.csv)',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 14)),
+                Text('Arquivo único com seções',
+                    style: TextStyle(
+                        fontSize: 11, color: AppTheme.mutedForeground)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

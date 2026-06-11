@@ -2,4 +2,5 @@ analyzer:
   errors:
     deprecated_member_use: ignore
     prefer_null_aware_operators: ignore
+    unnecessary_import: ignore
 include: package:flutter_lints/flutter.yaml
