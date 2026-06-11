@@ -17,6 +17,7 @@ import 'data/datasources/users_remote_datasource.dart';
 import 'data/datasources/reports_remote_datasource.dart';
 import 'data/datasources/chat_remote_datasource.dart';
 import 'presentation/viewmodels/chat_viewmodel.dart';
+import 'presentation/viewmodels/adoption_request_viewmodel.dart';
 
 import 'data/repositories/adoption_request_repository_impl.dart';
 import 'data/repositories/reports_repository_impl.dart';
@@ -25,7 +26,7 @@ import 'data/repositories/cep_repository_impl.dart';
 import 'data/repositories/pet_repository_impl.dart';
 import 'data/repositories/users_repository_impl.dart';
 
-import 'presentation/viewmodels/adoption_request_viewmodel.dart';
+import 'presentation/viewmodels/reports_viewmodel.dart';
 import 'presentation/viewmodels/auth_viewmodel.dart';
 import 'presentation/viewmodels/dashboard_viewmodel.dart';
 import 'presentation/viewmodels/forgot_password_viewmodel.dart';
@@ -69,7 +70,7 @@ Future<void> main() async {
   final adoptionRequestRemote = AdoptionRequestRemoteDatasource(httpClient);
   final adoptionRequestRepository =
       AdoptionRequestRepositoryImpl(adoptionRequestRemote);
-  final adoptionRequestViewmodel =
+  final adoptionRequestViewModel =
       AdoptionRequestViewmodel(adoptionRequestRepository);
 
   final reportsRemote = ReportsRemoteDatasource(httpClient);
@@ -102,11 +103,15 @@ Future<void> main() async {
         ChangeNotifierProvider<PetViewModel>.value(value: petViewModel),
 
         ChangeNotifierProvider<AdoptionRequestViewmodel>.value(
-          value: adoptionRequestViewmodel,
+          value: adoptionRequestViewModel,
         ),
 
         ChangeNotifierProvider(
           create: (_) => DashboardViewModel(reportsRepository),
+        ),
+
+        ChangeNotifierProvider(
+          create: (_) => ReportsViewModel(reportsRepository),
         ),
 
         ChangeNotifierProvider(

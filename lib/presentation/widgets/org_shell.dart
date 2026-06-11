@@ -33,6 +33,11 @@ class OrgShell extends StatelessWidget {
       route: '/chat',
     ),
     _NavItem(
+      icon: Icons.bar_chart_rounded,
+      label: 'Relatórios',
+      route: '/reports',
+    ),
+    _NavItem(
       icon: Icons.settings_rounded,
       label: 'Configurações',
       route: '/settings',
