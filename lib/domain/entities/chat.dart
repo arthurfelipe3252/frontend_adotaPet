@@ -1,3 +1,16 @@
+/// Prévia da última mensagem de uma conversa (para a lista de conversas).
+class LastMessagePreview {
+  final String content;
+  final DateTime createdAt;
+  final String senderTipo; // 'adotante' | 'protetor'
+
+  const LastMessagePreview({
+    required this.content,
+    required this.createdAt,
+    required this.senderTipo,
+  });
+}
+
 class Conversation {
   final String id;
   final String adoptionRequestId;
@@ -6,6 +19,10 @@ class Conversation {
   final String? adopterNome;
   final String? protetorNome;
   final bool isActive;
+
+  /// Mensagens da outra parte ainda não lidas (do ponto de vista do usuário).
+  final int unreadCount;
+  final LastMessagePreview? lastMessage;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -17,9 +34,27 @@ class Conversation {
     this.adopterNome,
     this.protetorNome,
     required this.isActive,
+    this.unreadCount = 0,
+    this.lastMessage,
     required this.createdAt,
     required this.updatedAt,
   });
+
+  Conversation copyWith({bool? isActive, int? unreadCount}) {
+    return Conversation(
+      id: id,
+      adoptionRequestId: adoptionRequestId,
+      adopterId: adopterId,
+      protetorId: protetorId,
+      adopterNome: adopterNome,
+      protetorNome: protetorNome,
+      isActive: isActive ?? this.isActive,
+      unreadCount: unreadCount ?? this.unreadCount,
+      lastMessage: lastMessage,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
 }
 
 class ChatMessage {

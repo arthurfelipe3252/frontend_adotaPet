@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:adota_pet/core/notifications/app_notifier.dart';
+import 'package:adota_pet/core/theme/app_status_colors.dart';
 import 'package:adota_pet/core/theme/app_theme.dart';
+import 'package:adota_pet/domain/entities/adoption_request.dart';
 import 'package:adota_pet/domain/entities/chat.dart';
+import 'package:adota_pet/presentation/viewmodels/adoption_request_viewmodel.dart';
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
+import 'package:adota_pet/presentation/viewmodels/catalog_viewmodel.dart';
 import 'package:adota_pet/presentation/viewmodels/chat_viewmodel.dart';
 import 'package:adota_pet/presentation/widgets/state_views.dart';
+import 'package:adota_pet/presentation/widgets/status_pill.dart';
 
 class ChatPage extends StatefulWidget {
   final String? conversationId;
@@ -29,7 +35,12 @@ class _ChatPageState extends State<ChatPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!context.mounted) return;
       final vm = context.read<ChatViewModel>();
+      // Dados para resolver "{contato} - {pet}" e a lista de iniciar conversa.
+      final adoptionVm = context.read<AdoptionRequestViewmodel>();
+      if (adoptionVm.requests.isEmpty) adoptionVm.loadAll();
+      context.read<CatalogViewModel>().loadPets(); // guardado
       await vm.loadConversations();
       if (widget.conversationId != null && context.mounted) {
         await vm.openConversation(widget.conversationId!);
@@ -64,7 +75,51 @@ class _ChatPageState extends State<ChatPage> {
       appBar: AppBar(title: const Text('Chat')),
       backgroundColor: AppTheme.background,
       body: const _ConversationList(),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _startNewChat,
+        backgroundColor: AppTheme.primary,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add_comment_rounded),
+        label: const Text('Nova conversa'),
+      ),
     );
+  }
+
+  Future<void> _startNewChat() async {
+    final chatVm = context.read<ChatViewModel>();
+    final adoptionVm = context.read<AdoptionRequestViewmodel>();
+    final catalogVm = context.read<CatalogViewModel>();
+
+    if (adoptionVm.requests.isEmpty) await adoptionVm.loadAll();
+    if (!mounted) return;
+    if (chatVm.conversations.isEmpty) await chatVm.loadConversations();
+    if (!mounted) return;
+    catalogVm.loadPets();
+
+    // Só solicitações que ainda não têm conversa (as demais já estão na lista).
+    final comConversa =
+        chatVm.conversations.map((c) => c.adoptionRequestId).toSet();
+    final candidatos =
+        adoptionVm.requests.where((r) => !comConversa.contains(r.id)).toList();
+
+    final escolhido = await showModalBottomSheet<AdoptionRequest>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppTheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => _StartChatSheet(requests: candidatos),
+    );
+    if (escolhido == null || !mounted) return;
+
+    final conv = await chatVm.getOrCreateConversation(escolhido.id);
+    if (!mounted) return;
+    if (conv == null) {
+      AppNotifier.instance.error('Não foi possível iniciar a conversa.');
+      return;
+    }
+    chatVm.openConversation(conv.id);
   }
 }
 
@@ -76,6 +131,8 @@ class _ConversationList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<ChatViewModel>();
+    final adoptionVm = context.watch<AdoptionRequestViewmodel>();
+    final catalogVm = context.watch<CatalogViewModel>();
 
     if (vm.isLoadingConversations) {
       return const Center(
@@ -112,11 +169,12 @@ class _ConversationList extends StatelessWidget {
       color: AppTheme.primary,
       child: ListView.separated(
         itemCount: vm.conversations.length,
-        separatorBuilder: (_, __) => const Divider(height: 1, indent: 72),
+        separatorBuilder: (_, _) => const Divider(height: 1, indent: 72),
         itemBuilder: (_, i) {
           final conv = vm.conversations[i];
           return _ConversationTile(
             conversation: conv,
+            petName: _petNameFor(conv, adoptionVm, catalogVm),
             onTap: () =>
                 context.read<ChatViewModel>().openConversation(conv.id),
           );
@@ -128,18 +186,23 @@ class _ConversationList extends StatelessWidget {
 
 class _ConversationTile extends StatelessWidget {
   final Conversation conversation;
+  final String? petName;
   final VoidCallback onTap;
 
-  const _ConversationTile({required this.conversation, required this.onTap});
+  const _ConversationTile({
+    required this.conversation,
+    required this.petName,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Para simplificar, assumimos o nome do adotante ou contato primário.
-    // Pode mudar de acordo com quem está logado (ONG ou adotante),
-    // mas o desktop exibia adopterNome ou 'Adotante'.
-    final nomeContato = conversation.adopterNome?.isNotEmpty == true
-        ? conversation.adopterNome!
-        : 'Adotante';
+    final souAdotante =
+        context.read<AuthViewModel>().session?.usuario.isAdotante ?? false;
+    final contato = _contactName(conversation, souAdotante);
+    final titulo = _chatTitle(conversation, souAdotante, petName);
+    final last = conversation.lastMessage;
+    final hasUnread = conversation.unreadCount > 0;
 
     return InkWell(
       onTap: onTap,
@@ -151,7 +214,7 @@ class _ConversationTile extends StatelessWidget {
               radius: 26,
               backgroundColor: AppTheme.primary.withOpacity(0.12),
               child: Text(
-                nomeContato.isNotEmpty ? nomeContato[0].toUpperCase() : '?',
+                contato.isNotEmpty ? contato[0].toUpperCase() : '?',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -165,11 +228,10 @@ class _ConversationTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
                         child: Text(
-                          nomeContato,
+                          titulo,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -179,13 +241,49 @@ class _ConversationTile extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (!conversation.isActive)
+                      if (last != null) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          _timeLabel(last.createdAt),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight:
+                                hasUnread ? FontWeight.w700 : FontWeight.w500,
+                            color: hasUnread
+                                ? AppTheme.primary
+                                : AppTheme.mutedForeground,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _previewText(last, souAdotante),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight:
+                                hasUnread ? FontWeight.w700 : FontWeight.w400,
+                            color: hasUnread
+                                ? AppTheme.foreground
+                                : AppTheme.mutedForeground,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (hasUnread)
+                        _UnreadBadge(count: conversation.unreadCount)
+                      else if (!conversation.isActive)
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 3,
                           ),
-                          margin: const EdgeInsets.only(left: 8),
                           decoration: BoxDecoration(
                             color: AppTheme.border,
                             borderRadius: BorderRadius.circular(20),
@@ -201,20 +299,265 @@ class _ConversationTile extends StatelessWidget {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Solicitação de adoção',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppTheme.mutedForeground,
-                    ),
-                  ),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  String _previewText(LastMessagePreview? last, bool souAdotante) {
+    if (last == null) return 'Solicitação de adoção';
+    final ehMinha = souAdotante
+        ? last.senderTipo == 'adotante'
+        : last.senderTipo == 'protetor';
+    return ehMinha ? 'Você: ${last.content}' : last.content;
+  }
+
+  String _timeLabel(DateTime dt) {
+    final local = dt.toLocal();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final d = DateTime(local.year, local.month, local.day);
+    if (d == today) {
+      return '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    }
+    if (d == today.subtract(const Duration(days: 1))) return 'Ontem';
+    return '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}';
+  }
+}
+
+/// Bolinha laranja com a contagem de mensagens não lidas.
+class _UnreadBadge extends StatelessWidget {
+  final int count;
+  const _UnreadBadge({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppTheme.primary,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        count > 99 ? '99+' : '$count',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Helpers de título (contato + nome do pet) ─────────────────────────────────
+
+/// Nome do outro lado da conversa. Para o adotante, o protetor/ONG.
+String _contactName(Conversation c, bool souAdotante) {
+  if (souAdotante) {
+    return (c.protetorNome?.isNotEmpty == true) ? c.protetorNome! : 'Protetor';
+  }
+  return (c.adopterNome?.isNotEmpty == true) ? c.adopterNome! : 'Adotante';
+}
+
+/// Nome do pet da conversa, via `adoptionRequestId` → solicitação → catálogo.
+/// `null` se ainda não resolvido (catálogo carregando) ou pet indisponível.
+String? _petNameFor(
+  Conversation c,
+  AdoptionRequestViewmodel adoptionVm,
+  CatalogViewModel catalogVm,
+) {
+  for (final r in adoptionVm.requests) {
+    if (r.id == c.adoptionRequestId) {
+      return catalogVm.getPetById(r.petId)?.nome;
+    }
+  }
+  return null;
+}
+
+/// "{contato} - {pet}" (ou só o contato, se o pet não resolveu).
+String _chatTitle(Conversation c, bool souAdotante, String? petName) {
+  final contato = _contactName(c, souAdotante);
+  return (petName != null && petName.isNotEmpty)
+      ? '$contato - $petName'
+      : contato;
+}
+
+// ── Bottom-sheet: iniciar nova conversa ───────────────────────────────────────
+
+class _StartChatSheet extends StatelessWidget {
+  final List<AdoptionRequest> requests;
+  const _StartChatSheet({required this.requests});
+
+  @override
+  Widget build(BuildContext context) {
+    final catalogVm = context.watch<CatalogViewModel>();
+    final media = MediaQuery.of(context);
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: media.size.height * 0.7),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: AppTheme.border,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 0, 20, 4),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Iniciar conversa',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.foreground,
+                ),
+              ),
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 0, 20, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Escolha uma solicitação para começar a conversa.',
+                style: TextStyle(fontSize: 13, color: AppTheme.mutedForeground),
+              ),
+            ),
+          ),
+          if (requests.isEmpty)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 36),
+              child: Text(
+                'Você já tem conversas para todas as suas solicitações.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppTheme.mutedForeground),
+              ),
+            )
+          else
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+                itemCount: requests.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                itemBuilder: (_, i) {
+                  final r = requests[i];
+                  final pet = catalogVm.getPetById(r.petId);
+                  return _StartChatItem(
+                    request: r,
+                    petNome: pet?.nome ?? 'Pet',
+                    onTap: () => Navigator.pop(context, r),
+                  );
+                },
+              ),
+            ),
+          SizedBox(height: media.padding.bottom),
+        ],
+      ),
+    );
+  }
+}
+
+class _StartChatItem extends StatelessWidget {
+  final AdoptionRequest request;
+  final String petNome;
+  final VoidCallback onTap;
+
+  const _StartChatItem({
+    required this.request,
+    required this.petNome,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final protetor = request.protetorNome;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppTheme.border),
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: AppTheme.primary.withOpacity(0.12),
+                child: Text(
+                  petNome.isNotEmpty ? petNome[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            petNome,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.foreground,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        StatusPill(
+                          label: AppStatusColors.requestLabel(request.status),
+                          color: AppStatusColors.request(request.status),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      protetor != null && protetor.isNotEmpty
+                          ? 'Falar com $protetor'
+                          : 'Solicitação de adoção',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.mutedForeground,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.chevron_right_rounded,
+                  color: AppTheme.mutedForeground),
+            ],
+          ),
         ),
       ),
     );
@@ -264,9 +607,13 @@ class _MessagePanelState extends State<_MessagePanel> {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<ChatViewModel>();
+    final adoptionVm = context.watch<AdoptionRequestViewmodel>();
+    final catalogVm = context.watch<CatalogViewModel>();
     final conv = vm.activeConversation;
     final session = context.read<AuthViewModel>().session;
-    final myUserId = session?.usuario.id ?? '';
+    // O backend envia senderId como id de PERFIL (não usuario.id); o lado do
+    // balão é decidido pelo tipo do remetente vs o tipo do usuário logado.
+    final souAdotante = session?.usuario.isAdotante ?? false;
 
     if (conv == null) {
       return const Scaffold(
@@ -276,9 +623,9 @@ class _MessagePanelState extends State<_MessagePanel> {
 
     _scrollToBottom();
 
-    final nomeContato = conv.adopterNome?.isNotEmpty == true
-        ? conv.adopterNome!
-        : 'Adotante';
+    final contato = _contactName(conv, souAdotante);
+    final petName = _petNameFor(conv, adoptionVm, catalogVm);
+    final titulo = _chatTitle(conv, souAdotante, petName);
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -293,7 +640,7 @@ class _MessagePanelState extends State<_MessagePanel> {
               radius: 16,
               backgroundColor: AppTheme.primary.withOpacity(0.12),
               child: Text(
-                nomeContato.isNotEmpty ? nomeContato[0].toUpperCase() : '?',
+                contato.isNotEmpty ? contato[0].toUpperCase() : '?',
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
@@ -307,7 +654,9 @@ class _MessagePanelState extends State<_MessagePanel> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    nomeContato,
+                    titulo,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -355,7 +704,9 @@ class _MessagePanelState extends State<_MessagePanel> {
                       itemCount: vm.messages.length,
                       itemBuilder: (_, i) {
                         final msg = vm.messages[i];
-                        final isMine = msg.senderId == myUserId;
+                        final isMine = souAdotante
+                            ? msg.senderTipo == 'adotante'
+                            : msg.senderTipo == 'protetor';
                         final showDate =
                             i == 0 ||
                             !_sameDay(
@@ -414,8 +765,9 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final local = message.createdAt.toLocal();
     final time =
-        '${message.createdAt.hour.toString().padLeft(2, '0')}:${message.createdAt.minute.toString().padLeft(2, '0')}';
+        '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -526,12 +878,13 @@ class _DateDivider extends StatelessWidget {
   const _DateDivider({required this.date});
 
   String get _label {
+    final local = date.toLocal();
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final d = DateTime(date.year, date.month, date.day);
+    final d = DateTime(local.year, local.month, local.day);
     if (d == today) return 'Hoje';
     if (d == today.subtract(const Duration(days: 1))) return 'Ontem';
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    return '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}/${local.year}';
   }
 
   @override

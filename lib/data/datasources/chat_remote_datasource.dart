@@ -58,6 +58,24 @@ class ChatRemoteDatasource {
     }
   }
 
+  /// Ativa/encerra a conversa. `isActive=false` encerra (o histórico permanece).
+  Future<ConversationModel> setActive(String id, bool isActive) async {
+    try {
+      final res = await client.patch(
+        '/chat/conversations/$id/active',
+        data: {'isActive': isActive},
+      );
+      return ConversationModel.fromJson(res.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw failureFromDio(e, customByStatus: {
+        403: 'Você não pode alterar esta conversa.',
+        404: 'Conversa não encontrada.',
+      });
+    } catch (e) {
+      throw Failure('Não foi possível atualizar a conversa.');
+    }
+  }
+
   // ── Mensagens ─────────────────────────────────────────────────────────────
 
   Future<List<ChatMessageModel>> getMessages(
@@ -104,11 +122,12 @@ class ChatRemoteDatasource {
     }
   }
 
-  Future<void> markAsRead(String messageId) async {
+  /// Marca como lidas todas as mensagens da OUTRA parte nesta conversa
+  /// (`PATCH /chat/conversations/:id/read` → `{ markedAsRead }`). Falha
+  /// silenciosa: não deve bloquear a abertura da conversa.
+  Future<void> markConversationRead(String conversationId) async {
     try {
-      await client.patch('/chat/messages/$messageId/read', data: {
-        'isRead': true,
-      });
+      await client.patch('/chat/conversations/$conversationId/read');
     } on DioException catch (_) {
       // Falha silenciosa — não bloqueia a UX
     } catch (_) {}

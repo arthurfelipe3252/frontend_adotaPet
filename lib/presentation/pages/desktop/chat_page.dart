@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:adota_pet/core/notifications/app_notifier.dart';
 import 'package:adota_pet/core/theme/app_dimens.dart';
 import 'package:adota_pet/core/theme/app_theme.dart';
 import 'package:adota_pet/domain/entities/chat.dart';
@@ -171,6 +172,10 @@ class _ConversationTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final nomeAdotante = conversation.adopterNome ?? 'Adotante';
+    final souAdotante =
+        context.read<AuthViewModel>().session?.usuario.isAdotante ?? false;
+    final last = conversation.lastMessage;
+    final hasUnread = conversation.unreadCount > 0;
 
     return Material(
       color: isActive ? AppTheme.primary.withOpacity(0.08) : Colors.transparent,
@@ -199,43 +204,121 @@ class _ConversationTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      nomeAdotante,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: isActive ? AppTheme.primary : AppTheme.foreground,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            nomeAdotante,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: isActive ? AppTheme.primary : AppTheme.foreground,
+                            ),
+                          ),
+                        ),
+                        if (last != null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            _timeLabel(last.createdAt),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w500,
+                              color: hasUnread
+                                  ? AppTheme.primary
+                                  : AppTheme.mutedForeground,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Solicitação de adoção',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.mutedForeground,
-                      ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _previewText(last, souAdotante),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w400,
+                              color: hasUnread
+                                  ? AppTheme.foreground
+                                  : AppTheme.mutedForeground,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (hasUnread)
+                          _UnreadBadge(count: conversation.unreadCount)
+                        else if (!conversation.isActive)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppTheme.border,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'Encerrada',
+                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.mutedForeground),
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ),
               ),
-              if (!conversation.isActive)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppTheme.border,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    'Encerrada',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.mutedForeground),
-                  ),
-                ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  String _previewText(LastMessagePreview? last, bool souAdotante) {
+    if (last == null) return 'Solicitação de adoção';
+    final ehMinha = souAdotante
+        ? last.senderTipo == 'adotante'
+        : last.senderTipo == 'protetor';
+    return ehMinha ? 'Você: ${last.content}' : last.content;
+  }
+
+  String _timeLabel(DateTime dt) {
+    final local = dt.toLocal();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final d = DateTime(local.year, local.month, local.day);
+    if (d == today) {
+      return '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    }
+    if (d == today.subtract(const Duration(days: 1))) return 'Ontem';
+    return '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}';
+  }
+}
+
+/// Bolinha laranja com a contagem de mensagens não lidas.
+class _UnreadBadge extends StatelessWidget {
+  final int count;
+  const _UnreadBadge({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppTheme.primary,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        count > 99 ? '99+' : '$count',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          color: Colors.white,
         ),
       ),
     );
@@ -285,7 +368,9 @@ class _MessagePanelState extends State<_MessagePanel> {
     final vm = context.watch<ChatViewModel>();
     final conv = vm.activeConversation;
     final session = context.read<AuthViewModel>().session;
-    final myUserId = session?.usuario.id ?? '';
+    // O backend envia senderId como id de PERFIL (não usuario.id); o lado do
+    // balão é decidido pelo tipo do remetente vs o tipo do usuário logado.
+    final souAdotante = session?.usuario.isAdotante ?? false;
 
     // Sem conversa selecionada
     if (conv == null) {
@@ -333,7 +418,9 @@ class _MessagePanelState extends State<_MessagePanel> {
                         itemCount: vm.messages.length,
                         itemBuilder: (_, i) {
                           final msg = vm.messages[i];
-                          final isMine = msg.senderId == myUserId;
+                          final isMine = souAdotante
+                              ? msg.senderTipo == 'adotante'
+                              : msg.senderTipo == 'protetor';
                           final showDate = i == 0 ||
                               !_sameDay(vm.messages[i - 1].createdAt, msg.createdAt);
                           return Column(
@@ -454,7 +541,12 @@ class _ConversationHeader extends StatelessWidget {
       ),
     );
     if (confirm == true && context.mounted) {
-      context.read<ChatViewModel>().closeConversation();
+      final ok = await context.read<ChatViewModel>().endConversation();
+      if (ok) {
+        AppNotifier.instance.success('Conversa encerrada.');
+      } else if (context.mounted) {
+        AppNotifier.instance.error('Não foi possível encerrar a conversa.');
+      }
     }
   }
 }
@@ -469,8 +561,9 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final local = message.createdAt.toLocal();
     final time =
-        '${message.createdAt.hour.toString().padLeft(2, '0')}:${message.createdAt.minute.toString().padLeft(2, '0')}';
+        '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -559,12 +652,13 @@ class _DateDivider extends StatelessWidget {
   const _DateDivider({required this.date});
 
   String get _label {
+    final local = date.toLocal();
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final d = DateTime(date.year, date.month, date.day);
+    final d = DateTime(local.year, local.month, local.day);
     if (d == today) return 'Hoje';
     if (d == today.subtract(const Duration(days: 1))) return 'Ontem';
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+    return '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}/${local.year}';
   }
 
   @override

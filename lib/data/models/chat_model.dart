@@ -8,6 +8,8 @@ class ConversationModel {
   final String? adopterNome;
   final String? protetorNome;
   final bool isActive;
+  final int unreadCount;
+  final LastMessagePreview? lastMessage;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -19,6 +21,8 @@ class ConversationModel {
     this.adopterNome,
     this.protetorNome,
     required this.isActive,
+    this.unreadCount = 0,
+    this.lastMessage,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -32,8 +36,22 @@ class ConversationModel {
       adopterNome: (json['adopter'] as Map<String, dynamic>?)?['nome'] as String?,
       protetorNome: (json['protetor'] as Map<String, dynamic>?)?['nome'] as String?,
       isActive: json['isActive'] as bool? ?? true,
+      unreadCount: (json['unreadCount'] as num?)?.toInt() ?? 0,
+      lastMessage: _lastMessage(json['lastMessage']),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+    );
+  }
+
+  static LastMessagePreview? _lastMessage(dynamic v) {
+    if (v is! Map) return null;
+    final content = v['content'] as String?;
+    if (content == null) return null;
+    return LastMessagePreview(
+      content: content,
+      createdAt: DateTime.tryParse(v['createdAt']?.toString() ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      senderTipo: v['senderTipo'] as String? ?? 'adotante',
     );
   }
 
@@ -45,6 +63,8 @@ class ConversationModel {
         adopterNome: adopterNome,
         protetorNome: protetorNome,
         isActive: isActive,
+        unreadCount: unreadCount,
+        lastMessage: lastMessage,
         createdAt: createdAt,
         updatedAt: updatedAt,
       );

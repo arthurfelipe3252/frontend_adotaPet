@@ -101,7 +101,12 @@ class CatalogViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadPets() async {
+  /// Carrega todos os pets. Com a guarda, abas que compartilham este viewmodel
+  /// (catálogo + home do adotante, ambas vivas no IndexedStack) não baixam o
+  /// `GET /pets` em dobro. Use `force: true` para um refresh explícito.
+  Future<void> loadPets({bool force = false}) async {
+    if (isLoading) return;
+    if (!force && _allPets.isNotEmpty) return;
     isLoading = true;
     error = null;
     notifyListeners();

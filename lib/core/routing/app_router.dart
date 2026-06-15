@@ -22,6 +22,7 @@ import 'package:adota_pet/presentation/pages/mobile/login_page.dart' as mobile;
 import 'package:adota_pet/presentation/pages/mobile/register_adotante_page.dart'
     as mobile;
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
+import 'package:adota_pet/presentation/widgets/mobile_shell.dart';
 import 'package:adota_pet/presentation/widgets/org_shell.dart';
 
 GoRouter buildAppRouter(AuthViewModel auth) {
@@ -91,9 +92,8 @@ GoRouter buildAppRouter(AuthViewModel auth) {
         routes: [
           GoRoute(
             path: '/home',
-            builder: (_, __) => kIsWeb
-                ? const DashboardPage()
-                : const _MobilePlaceholder(message: 'Home mobile em breve'),
+            builder: (_, __) =>
+                kIsWeb ? const DashboardPage() : const MobileShell(),
           ),
           GoRoute(
             path: '/pets',

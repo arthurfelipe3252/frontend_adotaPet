@@ -51,7 +51,10 @@
       "Bash(python -c ' *)",
       "Bash(grep -E \"^\\(integration_test|test_driver\\)$\")",
       "Bash(flutter doctor *)",
-      "Bash(flutter emulators *)"
+      "Bash(flutter emulators *)",
+      "Bash(python *)",
+      "PowerShell(flutter build *)",
+      "Bash(grep -vE \"Analyzing|^$|new version|flutter upgrade|^┌|^│|^└\")"
     ]
   }
 }

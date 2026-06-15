@@ -1,11 +1,8 @@
-// ignore_for_file: avoid_web_libraries_in_flutter
-
-import 'dart:html' as html;
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:adota_pet/core/platform/file_download.dart';
 import 'package:adota_pet/core/theme/app_dimens.dart';
 import 'package:adota_pet/core/theme/app_status_colors.dart';
 import 'package:adota_pet/core/theme/app_theme.dart';
@@ -40,13 +37,12 @@ class _ReportsPageState extends State<ReportsPage> {
     if (bytes == null) return;
 
     if (kIsWeb) {
-      final blob = html.Blob([bytes],
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      html.AnchorElement(href: url)
-        ..setAttribute('download', 'adotapet_relatorio.xlsx')
-        ..click();
-      html.Url.revokeObjectUrl(url);
+      downloadBytes(
+        bytes,
+        filename: 'adotapet_relatorio.xlsx',
+        mimeType:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
     }
 
     if (mounted && vm.exportError != null) {
@@ -632,14 +628,12 @@ class _TopPetRow extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(
-            width: 80,
-            child: StatusPill(
-              label:
-                  '${pet.totalRequests} ${pet.totalRequests == 1 ? 'pedido' : 'pedidos'}',
-              color: AppTheme.primary,
-              icon: Icons.favorite_rounded,
-            ),
+          const SizedBox(width: 8),
+          StatusPill(
+            label:
+                '${pet.totalRequests} ${pet.totalRequests == 1 ? 'pedido' : 'pedidos'}',
+            color: AppTheme.primary,
+            icon: Icons.favorite_rounded,
           ),
         ],
       ),

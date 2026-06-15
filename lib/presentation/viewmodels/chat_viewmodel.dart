@@ -15,6 +15,7 @@ class ChatViewModel extends ChangeNotifier {
   bool isLoadingConversations = false;
   bool isLoadingMessages = false;
   bool isSending = false;
+  bool isClosing = false;
   String? error;
 
   List<Conversation> conversations = [];
@@ -33,6 +34,8 @@ class ChatViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       final models = await datasource.getConversations();
+      // A API já entrega ordenado por última atividade (lastMessage.createdAt
+      // desc), então não reordenamos no cliente.
       conversations = models.map((m) => m.toEntity()).toList();
     } catch (e) {
       error = _msg(e);
@@ -52,12 +55,52 @@ class ChatViewModel extends ChangeNotifier {
       activeConversation = conv.toEntity();
       await _fetchMessages();
       _startPolling();
+      // Ao abrir, zera as não-lidas (backend marca tudo da outra parte como
+      // lido numa chamada só; espelhamos localmente sem refetch).
+      _markConversationRead(conversationId);
     } catch (e) {
       error = _msg(e);
     }
 
     isLoadingMessages = false;
     notifyListeners();
+  }
+
+  /// Marca a conversa como lida no backend e zera o `unreadCount` local
+  /// (na lista e na conversa ativa). Falha silenciosa.
+  Future<void> _markConversationRead(String conversationId) async {
+    await datasource.markConversationRead(conversationId);
+    conversations = conversations
+        .map((c) => c.id == conversationId ? c.copyWith(unreadCount: 0) : c)
+        .toList();
+    if (activeConversation?.id == conversationId) {
+      activeConversation = activeConversation!.copyWith(unreadCount: 0);
+    }
+    notifyListeners();
+  }
+
+  /// Abre OU cria a conversa de uma solicitação. Procura primeiro na lista já
+  /// carregada (por `adoptionRequestId`); se não achar, tenta criar; se a
+  /// criação falhar (ex.: 409 porque a conversa existe mas a lista estava
+  /// desatualizada), recarrega e procura de novo. Retorna `null` em falha real.
+  Future<Conversation?> getOrCreateConversation(String adoptionRequestId) async {
+    Conversation? find() {
+      for (final c in conversations) {
+        if (c.adoptionRequestId == adoptionRequestId) return c;
+      }
+      return null;
+    }
+
+    if (conversations.isEmpty) await loadConversations();
+    final existing = find();
+    if (existing != null) return existing;
+
+    final created = await createConversation(adoptionRequestId);
+    if (created != null) return created;
+
+    // Falhou ao criar (provável 409): sincroniza e tenta achar de novo.
+    await loadConversations();
+    return find();
   }
 
   Future<Conversation?> createConversation(String adoptionRequestId) async {
@@ -108,10 +151,6 @@ class ChatViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> markMessageRead(String messageId) async {
-    await datasource.markAsRead(messageId);
-  }
-
   // ── Polling ────────────────────────────────────────────────────────────────
 
   void _startPolling() {
@@ -125,6 +164,33 @@ class ChatViewModel extends ChangeNotifier {
     _pollTimer = null;
   }
 
+  /// Encerra a conversa ativa no backend (`PATCH .../active` com isActive=false).
+  /// Mantém a conversa aberta (histórico visível); apenas marca como encerrada
+  /// e atualiza a lista. Retorna `true` em sucesso.
+  Future<bool> endConversation() async {
+    final conv = activeConversation;
+    if (conv == null) return false;
+    isClosing = true;
+    notifyListeners();
+    try {
+      final updated = (await datasource.setActive(conv.id, false)).toEntity();
+      activeConversation = updated;
+      conversations = conversations
+          .map((c) => c.id == updated.id ? updated : c)
+          .toList();
+      stopPolling();
+      isClosing = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      error = _msg(e);
+      isClosing = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Fecha a conversa na UI (volta para a lista) — NÃO encerra no backend.
   void closeConversation() {
     stopPolling();
     activeConversation = null;
