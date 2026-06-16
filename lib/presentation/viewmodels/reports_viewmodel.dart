@@ -1,5 +1,4 @@
-// ignore_for_file: unnecessary_import
-
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:excel/excel.dart';
@@ -76,6 +75,8 @@ class ReportsViewModel extends ChangeNotifier {
     await load();
   }
 
+  // ── XLSX ────────────────────────────────────────────────────────────────
+
   /// Gera o xlsx em memória e retorna os bytes para download.
   Future<Uint8List?> buildXlsx() async {
     isExporting = true;
@@ -88,32 +89,25 @@ class ReportsViewModel extends ChangeNotifier {
 
       final excel = Excel.createExcel();
 
-      // ── Aba: KPIs ──────────────────────────────────────────────────────
       final kpisSheet = excel['KPIs'];
       excel.setDefaultSheet('KPIs');
       _writeKpis(kpisSheet, d.kpis);
 
-      // ── Aba: Adoções por Mês ───────────────────────────────────────────
       final adoptSheet = excel['Adoções por Mês'];
       _writeTimeline(adoptSheet, d.adoptionsTimeline, 'Adoções');
 
-      // ── Aba: Solicitações por Mês ──────────────────────────────────────
       final reqSheet = excel['Solicitações por Mês'];
       _writeTimeline(reqSheet, d.requestsTimeline, 'Solicitações');
 
-      // ── Aba: Funil ─────────────────────────────────────────────────────
       final funnelSheet = excel['Funil de Adoção'];
       _writeFunnel(funnelSheet, d.funnel);
 
-      // ── Aba: Top Pets ──────────────────────────────────────────────────
       final topSheet = excel['Top Pets'];
       _writeTopPets(topSheet, d.topPets);
 
-      // ── Aba: Pets Parados ──────────────────────────────────────────────
       final staleSheet = excel['Pets Parados'];
       _writeStalePets(staleSheet, d.stalePets);
 
-      // Remove aba padrão vazia criada pelo excel
       excel.delete('Sheet1');
 
       final bytes = excel.encode();
@@ -129,7 +123,109 @@ class ReportsViewModel extends ChangeNotifier {
     }
   }
 
-  // ── Helpers de escrita ───────────────────────────────────────────────────
+  // ── CSV ─────────────────────────────────────────────────────────────────
+
+  /// Gera um único CSV consolidado com seções separadas por linha em branco.
+  /// Encoding UTF-8 com BOM para compatibilidade com Excel no Windows.
+  Future<Uint8List?> buildCsv() async {
+    isExporting = true;
+    exportError = null;
+    notifyListeners();
+
+    try {
+      final d = data;
+      if (d == null) throw Failure('Carregue os dados antes de exportar.');
+
+      final buf = StringBuffer();
+
+      _csvSection(buf, 'KPIs', ['Indicador', 'Valor'], [
+        ['Pets disponíveis', d.kpis.petsDisponivel],
+        ['Pets em processo', d.kpis.petsEmProcesso],
+        ['Pets adotados (total)', d.kpis.petsAdotadoTotal],
+        ['Pets adotados (mês atual)', d.kpis.petsAdotadoMesAtual],
+        ['Solicitações pendentes', d.kpis.solicitacoesPendentes],
+        ['Conversas ativas', d.kpis.conversasAtivas],
+        ['Mensagens não lidas', d.kpis.mensagensNaoLidas],
+        ['Taxa de conversão (%)', d.kpis.taxaConversaoPct ?? ''],
+        ['Tempo médio de adoção (dias)', d.kpis.tempoMedioAdocaoDias ?? ''],
+      ]);
+
+      _csvSection(buf, 'Adoções por Mês', ['Mês', 'Adoções'],
+          d.adoptionsTimeline.map((p) => [_monthStr(p.monthStart), p.count]).toList());
+
+      _csvSection(buf, 'Solicitações por Mês', ['Mês', 'Solicitações'],
+          d.requestsTimeline.map((p) => [_monthStr(p.monthStart), p.count]).toList());
+
+      final fTotal = d.funnel.total == 0 ? 1 : d.funnel.total;
+      _csvSection(buf, 'Funil de Adoção', ['Etapa', 'Quantidade', '% do Total'], [
+        ['Recebidas', d.funnel.received, _pct(d.funnel.received, fTotal)],
+        ['Em análise', d.funnel.inAnalysis, _pct(d.funnel.inAnalysis, fTotal)],
+        ['Aprovadas', d.funnel.approved, _pct(d.funnel.approved, fTotal)],
+        ['Rejeitadas', d.funnel.rejected, _pct(d.funnel.rejected, fTotal)],
+      ]);
+
+      _csvSection(buf, 'Top Pets', ['#', 'Nome', 'Espécie', 'Porte', 'Status', 'Solicitações'],
+          d.topPets.asMap().entries.map((e) {
+            final p = e.value;
+            return [e.key + 1, p.nome, p.especieLabel, p.porte, p.status, p.totalRequests];
+          }).toList());
+
+      _csvSection(buf, 'Pets Parados', ['Nome', 'Espécie', 'Porte', 'Cadastrado em', 'Dias no catálogo'],
+          d.stalePets.map((p) => [
+                p.nome,
+                p.especieLabel,
+                p.porte,
+                _dateStr(p.createdAt),
+                p.diasNoCatalogo,
+              ]).toList());
+
+      // BOM UTF-8 para compatibilidade com Excel no Windows
+      final bom = Uint8List.fromList([0xEF, 0xBB, 0xBF]);
+      final content = utf8.encode(buf.toString());
+      return Uint8List.fromList([...bom, ...content]);
+    } catch (e) {
+      exportError = e is Failure ? e.message : 'Erro ao gerar o relatório CSV.';
+      return null;
+    } finally {
+      isExporting = false;
+      notifyListeners();
+    }
+  }
+
+  // ── CSV helpers ─────────────────────────────────────────────────────────
+
+  void _csvSection(
+    StringBuffer buf,
+    String title,
+    List<String> headers,
+    List<List<dynamic>> rows,
+  ) {
+    buf.writeln('# $title');
+    buf.writeln(headers.map(_csvEscape).join(','));
+    for (final row in rows) {
+      buf.writeln(row.map(_csvEscape).join(','));
+    }
+    buf.writeln();
+  }
+
+  String _csvEscape(dynamic v) {
+    final s = v.toString();
+    if (s.contains(',') || s.contains('"') || s.contains('\n')) {
+      return '"${s.replaceAll('"', '""')}"';
+    }
+    return s;
+  }
+
+  String _monthStr(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}';
+
+  String _dateStr(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+
+  String _pct(int v, int total) =>
+      '${(v / total * 100).toStringAsFixed(1)}%';
+
+  // ── XLSX helpers ─────────────────────────────────────────────────────────
 
   static final CellStyle _headerStyle = CellStyle(
     bold: true,
@@ -139,7 +235,8 @@ class ReportsViewModel extends ChangeNotifier {
 
   void _header(Sheet s, int row, List<String> cols) {
     for (var i = 0; i < cols.length; i++) {
-      final cell = s.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: row));
+      final cell =
+          s.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: row));
       cell.value = TextCellValue(cols[i]);
       cell.cellStyle = _headerStyle;
     }
@@ -174,10 +271,8 @@ class ReportsViewModel extends ChangeNotifier {
     _header(s, 0, ['Mês', colLabel]);
     for (var i = 0; i < pts.length; i++) {
       final p = pts[i];
-      final month =
-          '${p.monthStart.year}-${p.monthStart.month.toString().padLeft(2, '0')}';
       s.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1))
-          .value = TextCellValue(month);
+          .value = TextCellValue(_monthStr(p.monthStart));
       s.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: i + 1))
           .value = IntCellValue(p.count);
     }
@@ -224,7 +319,8 @@ class ReportsViewModel extends ChangeNotifier {
   }
 
   void _writeStalePets(Sheet s, List<StalePet> pets) {
-    _header(s, 0, ['Nome', 'Espécie', 'Porte', 'Cadastrado em', 'Dias no catálogo']);
+    _header(s, 0,
+        ['Nome', 'Espécie', 'Porte', 'Cadastrado em', 'Dias no catálogo']);
     for (var i = 0; i < pets.length; i++) {
       final p = pets[i];
       s.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: i + 1))
@@ -233,10 +329,8 @@ class ReportsViewModel extends ChangeNotifier {
           .value = TextCellValue(p.especieLabel);
       s.cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: i + 1))
           .value = TextCellValue(p.porte);
-      final created =
-          '${p.createdAt.day.toString().padLeft(2, '0')}/${p.createdAt.month.toString().padLeft(2, '0')}/${p.createdAt.year}';
       s.cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: i + 1))
-          .value = TextCellValue(created);
+          .value = TextCellValue(_dateStr(p.createdAt));
       s.cell(CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: i + 1))
           .value = IntCellValue(p.diasNoCatalogo);
     }
