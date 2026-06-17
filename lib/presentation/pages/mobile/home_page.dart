@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -13,8 +14,9 @@ import 'package:adota_pet/presentation/viewmodels/adoption_request_viewmodel.dar
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:adota_pet/presentation/viewmodels/catalog_viewmodel.dart';
 import 'package:adota_pet/presentation/viewmodels/chat_viewmodel.dart';
-import 'package:adota_pet/presentation/widgets/app_filter_chip.dart';
+import 'package:adota_pet/presentation/viewmodels/user_settings_viewmodel.dart';
 import 'package:adota_pet/presentation/widgets/confirm_dialog.dart';
+import 'package:adota_pet/presentation/widgets/mobile_screen_header.dart';
 import 'package:adota_pet/presentation/widgets/mobile_shell_scope.dart';
 import 'package:adota_pet/presentation/widgets/primary_button.dart';
 import 'package:adota_pet/presentation/widgets/state_views.dart';
@@ -38,11 +40,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   static const double _maxWidth = 430;
-  static const _tabConversas = 3;
   static const _tabCatalogo = 1;
+  static const _tabMatch = 2;
+  static const _tabConversas = 3;
+  static const _tabPerfil = 4;
 
   bool _didLoad = false;
-  String _filter = 'all'; // all | received | in_analysis | approved | rejected
 
   @override
   void didChangeDependencies() {
@@ -53,6 +56,11 @@ class _HomePageState extends State<HomePage> {
       if (!mounted) return;
       context.read<AdoptionRequestViewmodel>().loadAll();
       context.read<CatalogViewModel>().loadPets(); // guardado: não baixa 2x
+      // Carrega o perfil do adotante (foto/avatar do header); guardado.
+      final usuario = context.read<AuthViewModel>().session?.usuario;
+      if (usuario != null) {
+        context.read<UserSettingsViewModel>().loadFor(usuario);
+      }
     });
   }
 
@@ -95,7 +103,7 @@ class _HomePageState extends State<HomePage> {
     final action = await showModalBottomSheet<_RequestAction>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppTheme.surface,
+      backgroundColor: AppTheme.background,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -118,92 +126,85 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final vm = context.watch<AdoptionRequestViewmodel>();
     final catalog = context.watch<CatalogViewModel>();
-    final nome = context.read<AuthViewModel>().session?.usuario.nome ?? '';
-    final primeiro = nome.trim().isEmpty ? '' : nome.trim().split(' ').first;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        backgroundColor: AppTheme.surface,
-        elevation: 0,
-        centerTitle: false,
-        title: Text(
-          primeiro.isEmpty ? 'Início' : 'Olá, $primeiro 🐾',
-          style: const TextStyle(
-            fontWeight: FontWeight.w800,
-            color: AppTheme.foreground,
-          ),
-        ),
-      ),
-      body: _buildBody(vm, catalog),
-    );
-  }
-
-  Widget _buildBody(AdoptionRequestViewmodel vm, CatalogViewModel catalog) {
-    if (vm.isLoading && vm.requests.isEmpty) {
-      return const LoadingView(message: 'Carregando suas solicitações...');
-    }
-    if (vm.error != null && vm.requests.isEmpty) {
-      return ErrorStateView(message: vm.error!, onRetry: _reload);
-    }
-
-    final filtered = _filter == 'all'
-        ? vm.requests
-        : vm.requests.where((r) => r.status == _filter).toList();
-
-    return RefreshIndicator(
-      color: AppTheme.primary,
-      onRefresh: _reload,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Center(
-          child: SizedBox(
-            width: _maxWidth,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _StatusSummary(
-                    requests: vm.requests,
-                    selected: _filter,
-                    onSelect: (status) => setState(
-                      () => _filter = _filter == status ? 'all' : status,
-                    ),
+      body: SafeArea(
+        child: RefreshIndicator(
+          color: AppTheme.primary,
+          onRefresh: _reload,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Center(
+              child: SizedBox(
+                width: _maxWidth,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _GreetingHeader(
+                        onProfile: () =>
+                            MobileShellScope.of(context)?.goTo(_tabPerfil),
+                      ),
+                      const SizedBox(height: 18),
+                      _MatchBanner(
+                        onTap: () =>
+                            MobileShellScope.of(context)?.goTo(_tabMatch),
+                      ),
+                      const SizedBox(height: 22),
+                      Text(
+                        'Suas solicitações',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildRequests(vm, catalog),
+                    ],
                   ),
-                  const SizedBox(height: 22),
-                  Text(
-                    'Minhas solicitações',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  _FilterBar(
-                    selected: _filter,
-                    onSelect: (s) => setState(() => _filter = s),
-                  ),
-                  const SizedBox(height: 14),
-                  if (vm.requests.isEmpty)
-                    _emptyAll()
-                  else if (filtered.isEmpty)
-                    _emptyFilter()
-                  else
-                    ...filtered.map((r) {
-                      final pet = catalog.getPetById(r.petId);
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _RequestCard(
-                          request: r,
-                          pet: pet,
-                          onTap: () => _openDetail(r, pet),
-                        ),
-                      );
-                    }),
-                ],
+                ),
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildRequests(AdoptionRequestViewmodel vm, CatalogViewModel catalog) {
+    if (vm.isLoading && vm.requests.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(
+          child: CircularProgressIndicator(
+            color: AppTheme.primary,
+            strokeWidth: 2,
+          ),
+        ),
+      );
+    }
+    if (vm.error != null && vm.requests.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: ErrorStateView(message: vm.error!, onRetry: _reload),
+      );
+    }
+    if (vm.requests.isEmpty) return _emptyAll();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ...vm.requests.map((r) {
+          final pet = catalog.getPetById(r.petId);
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _RequestCard(
+              request: r,
+              pet: pet,
+              onTap: () => _openDetail(r, pet),
+            ),
+          );
+        }),
+      ],
     );
   }
 
@@ -222,151 +223,131 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _emptyFilter() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 28),
-      child: Text(
-        'Nenhuma solicitação neste filtro.',
-        textAlign: TextAlign.center,
-        style: TextStyle(color: AppTheme.mutedForeground),
+}
+
+// ── Cabeçalho (saudação + avatar) ─────────────────────────────────────────────
+
+class _GreetingHeader extends StatelessWidget {
+  final VoidCallback onProfile;
+  const _GreetingHeader({required this.onProfile});
+
+  @override
+  Widget build(BuildContext context) {
+    final nome = context.read<AuthViewModel>().session?.usuario.nome ?? '';
+    final primeiro = nome.trim().isEmpty ? '' : nome.trim().split(' ').first;
+    final inicial = primeiro.isNotEmpty ? primeiro[0].toUpperCase() : '?';
+
+    // Foto de perfil do usuário (carregada pelo UserSettingsViewModel), se houver.
+    final settings = context.watch<UserSettingsViewModel>();
+    final fotoBytes = settings.imagemBytes ?? _decodeImage(settings.imagemBase64);
+    final hasFoto = fotoBytes != null && !settings.removerImagem;
+
+    final avatar = InkWell(
+      customBorder: const CircleBorder(),
+      onTap: onProfile,
+      child: Container(
+        width: 46,
+        height: 46,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppTheme.primary,
+          image: hasFoto
+              ? DecorationImage(image: MemoryImage(fotoBytes), fit: BoxFit.cover)
+              : null,
+        ),
+        alignment: Alignment.center,
+        child: hasFoto
+            ? null
+            : Text(
+                inicial,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                ),
+              ),
       ),
+    );
+
+    return MobileScreenHeader(
+      leading: avatar,
+      title: primeiro.isEmpty ? 'Olá' : 'Olá, $primeiro',
+      subtitle: 'Encontre seu novo companheiro',
     );
   }
 }
 
-// ── Resumo por status ─────────────────────────────────────────────────────────
+// ── Banner CTA de Match (gradiente) ───────────────────────────────────────────
 
-const _summaryStatuses = <(String, String)>[
-  ('received', 'Recebidas'),
-  ('in_analysis', 'Em análise'),
-  ('approved', 'Aprovadas'),
-  ('rejected', 'Rejeitadas'),
-];
-
-class _StatusSummary extends StatelessWidget {
-  final List<AdoptionRequest> requests;
-  final String selected;
-  final ValueChanged<String> onSelect;
-
-  const _StatusSummary({
-    required this.requests,
-    required this.selected,
-    required this.onSelect,
-  });
+class _MatchBanner extends StatelessWidget {
+  final VoidCallback onTap;
+  const _MatchBanner({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (var i = 0; i < _summaryStatuses.length; i++) ...[
-          if (i > 0) const SizedBox(width: 8),
-          Expanded(
-            child: _StatTile(
-              count: requests.where((r) => r.status == _summaryStatuses[i].$1).length,
-              label: _summaryStatuses[i].$2,
-              color: AppStatusColors.request(_summaryStatuses[i].$1),
-              selected: selected == _summaryStatuses[i].$1,
-              onTap: () => onSelect(_summaryStatuses[i].$1),
-            ),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppTheme.primary, AppTheme.accent],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withOpacity(0.25),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
-      ],
-    );
-  }
-}
-
-class _StatTile extends StatelessWidget {
-  final int count;
-  final String label;
-  final Color color;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _StatTile({
-    required this.count,
-    required this.label,
-    required this.color,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-          decoration: BoxDecoration(
-            color: selected ? color.withOpacity(0.12) : AppTheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: selected ? color : AppTheme.border,
-              width: selected ? 1.5 : 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              Text(
-                '$count',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: color,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.mutedForeground,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
-    );
-  }
-}
-
-// ── Barra de filtros ──────────────────────────────────────────────────────────
-
-class _FilterBar extends StatelessWidget {
-  final String selected;
-  final ValueChanged<String> onSelect;
-
-  const _FilterBar({required this.selected, required this.onSelect});
-
-  static const _options = <(String, String)>[
-    ('all', 'Todas'),
-    ('received', 'Recebidas'),
-    ('in_analysis', 'Em análise'),
-    ('approved', 'Aprovadas'),
-    ('rejected', 'Rejeitadas'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final opt in _options) ...[
-            AppFilterChip(
-              label: opt.$2,
-              selected: selected == opt.$1,
-              onTap: () => onSelect(opt.$1),
+          Text(
+            'Descubra seu pet ideal 🐾',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Responda algumas perguntas e encontre o match perfeito',
+            style: TextStyle(fontSize: 13, color: Colors.white, height: 1.35),
+          ),
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Material(
+              color: Colors.white.withOpacity(0.22),
+              borderRadius: BorderRadius.circular(999),
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(999),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Fazer o Match',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      Icon(Icons.arrow_forward_rounded,
+                          size: 18, color: Colors.white),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(width: 8),
-          ],
+          ),
         ],
       ),
     );
@@ -389,14 +370,14 @@ class _RequestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final nome = pet?.nome ?? 'Pet';
-    final meta = pet == null
-        ? 'Solicitação de adoção'
-        : '${pet!.especieLabel} · ${pet!.porteLabel}';
+    final ong = (request.protetorNome?.isNotEmpty == true)
+        ? request.protetorNome!
+        : 'ONG';
 
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppTheme.border),
         boxShadow: const [
           BoxShadow(
@@ -410,76 +391,47 @@ class _RequestCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _PetThumb(pet: pet, size: 64),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Topo: nome (esq.) + status (sup. dir.).
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                nome,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 15.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppTheme.foreground,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            StatusPill(
-                              label:
-                                  AppStatusColors.requestLabel(request.status),
-                              color: AppStatusColors.request(request.status),
-                            ),
-                          ],
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                _PetThumb(pet: pet, size: 52),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        nome,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.foreground,
                         ),
-                        // Base: espécie · porte (inf. esq.) + data (inf. dir.).
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                meta,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 12.5,
-                                  color: AppTheme.mutedForeground,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Icon(Icons.schedule_rounded,
-                                size: 13, color: AppTheme.mutedForeground),
-                            const SizedBox(width: 4),
-                            Text(
-                              _dateLabel(request.createdAt),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.mutedForeground,
-                              ),
-                            ),
-                          ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        ong,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          color: AppTheme.mutedForeground,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 8),
+                StatusPill(
+                  label: AppStatusColors.requestLabel(request.status),
+                  color: AppStatusColors.request(request.status),
+                ),
+              ],
             ),
           ),
         ),
@@ -501,6 +453,8 @@ class _RequestDetailSheet extends StatelessWidget {
     final nome = pet?.nome ?? 'Pet';
     final media = MediaQuery.of(context);
     final questionario = _questionario(request.matchAnswers);
+    final protetor = request.protetorNome;
+    final mensagem = (request.mensagem ?? '').trim();
 
     return Padding(
       padding: EdgeInsets.only(bottom: media.viewInsets.bottom),
@@ -512,6 +466,7 @@ class _RequestDetailSheet extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Alça de arrasto
               Center(
                 child: Container(
                   width: 40,
@@ -523,6 +478,7 @@ class _RequestDetailSheet extends StatelessWidget {
                   ),
                 ),
               ),
+              // Header: pet + status + compatibilidade
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -548,10 +504,19 @@ class _RequestDetailSheet extends StatelessWidget {
                             ),
                           ),
                         ],
-                        const SizedBox(height: 8),
-                        StatusPill(
-                          label: AppStatusColors.requestLabel(request.status),
-                          color: AppStatusColors.request(request.status),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            StatusPill(
+                              label:
+                                  AppStatusColors.requestLabel(request.status),
+                              color: AppStatusColors.request(request.status),
+                            ),
+                            if (request.matchScore != null)
+                              _matchPill(request.matchScore!),
+                          ],
                         ),
                       ],
                     ),
@@ -559,39 +524,33 @@ class _RequestDetailSheet extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 18),
-              if (request.matchScore != null)
-                _MatchChip(score: request.matchScore!),
-              if (request.protetorNome != null &&
-                  request.protetorNome!.isNotEmpty)
-                _InfoRow(
-                  icon: Icons.volunteer_activism_outlined,
-                  label: 'Protetor/ONG',
-                  value: request.protetorNome!,
+              // Detalhes (protetor + data)
+              _SheetSection(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (protetor != null && protetor.isNotEmpty) ...[
+                      _DetailRow(
+                        icon: Icons.volunteer_activism_outlined,
+                        label: 'Protetor/ONG',
+                        value: protetor,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    _DetailRow(
+                      icon: Icons.event_outlined,
+                      label: 'Enviada em',
+                      value: _fullDate(request.createdAt),
+                    ),
+                  ],
                 ),
-              _InfoRow(
-                icon: Icons.event_outlined,
-                label: 'Enviada em',
-                value: _fullDate(request.createdAt),
               ),
-              if ((request.mensagem ?? '').trim().isNotEmpty) ...[
+              if (mensagem.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                const Text(
-                  'Sua mensagem',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.foreground,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.inputFill,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                _SheetSection(
+                  title: 'Sua mensagem',
                   child: Text(
-                    request.mensagem!.trim(),
+                    mensagem,
                     style: const TextStyle(
                       fontSize: 13,
                       color: AppTheme.foreground,
@@ -602,45 +561,45 @@ class _RequestDetailSheet extends StatelessWidget {
               ],
               if (questionario.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                const Text(
-                  'Questionário',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.foreground,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                for (final e in questionario)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            e.key,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.mutedForeground,
+                _SheetSection(
+                  title: 'Questionário',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (var i = 0; i < questionario.length; i++) ...[
+                        if (i > 0) const SizedBox(height: 8),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                questionario[i].key,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppTheme.mutedForeground,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 4,
-                          child: Text(
-                            e.value,
-                            textAlign: TextAlign.right,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.foreground,
+                            const SizedBox(width: 10),
+                            Expanded(
+                              flex: 4,
+                              child: Text(
+                                questionario[i].value,
+                                textAlign: TextAlign.right,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.foreground,
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ],
-                    ),
+                    ],
                   ),
+                ),
               ],
               const SizedBox(height: 22),
               PrimaryButton(
@@ -679,65 +638,103 @@ class _RequestDetailSheet extends StatelessWidget {
       ),
     );
   }
-}
 
-class _MatchChip extends StatelessWidget {
-  final double score;
-  const _MatchChip({required this.score});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _matchPill(double score) {
     final pct = score.round();
     final color = pct >= 70
         ? AppTheme.sage
         : (pct >= 50 ? AppTheme.accent : AppTheme.destructive);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Icon(Icons.favorite_rounded, size: 18, color: color),
-          const SizedBox(width: 8),
-          Text(
-            'Compatibilidade $pct%',
-            style: TextStyle(fontWeight: FontWeight.w700, color: color),
-          ),
-        ],
-      ),
+    return StatusPill(
+      label: 'Compatibilidade $pct%',
+      color: color,
+      icon: Icons.favorite_rounded,
     );
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
+/// Card de seção do bottom-sheet (mobile): título opcional + superfície
+/// arredondada com borda. Raio 16, igual aos cards da Home.
+class _SheetSection extends StatelessWidget {
+  final String? title;
+  final Widget child;
 
-  const _InfoRow({required this.icon, required this.label, required this.value});
+  const _SheetSection({this.title, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: AppTheme.mutedForeground),
-          const SizedBox(width: 8),
-          Text(
-            '$label: ',
-            style: const TextStyle(fontSize: 13, color: AppTheme.mutedForeground),
-          ),
-          Expanded(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (title != null)
+          Padding(
+            padding: const EdgeInsets.only(left: 2, bottom: 8),
             child: Text(
-              value,
+              title!,
               style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
                 color: AppTheme.foreground,
               ),
             ),
           ),
-        ],
-      ),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.border),
+          ),
+          child: child,
+        ),
+      ],
+    );
+  }
+}
+
+/// Linha de detalhe: ícone + rótulo discreto sobre o valor (sem "Label:").
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: AppTheme.mutedForeground),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.mutedForeground,
+                ),
+              ),
+              const SizedBox(height: 1),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.foreground,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -806,16 +803,6 @@ class _PetThumb extends StatelessWidget {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-String _dateLabel(DateTime dt) {
-  final local = dt.toLocal();
-  final now = DateTime.now();
-  final diff = now.difference(local);
-  if (diff.inDays <= 0) return 'Hoje';
-  if (diff.inDays == 1) return 'Ontem';
-  if (diff.inDays < 7) return 'há ${diff.inDays}d';
-  return '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}';
-}
-
 String _fullDate(DateTime dt) {
   final d = dt.toLocal();
   return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
@@ -850,5 +837,17 @@ String _moradiaLabel(String m) {
       return 'Apartamento';
     default:
       return m;
+  }
+}
+
+/// Decodifica uma imagem base64 (com ou sem prefixo data-URI). `null` se vazio/ inválido.
+Uint8List? _decodeImage(String? value) {
+  final raw = value?.trim();
+  if (raw == null || raw.isEmpty) return null;
+  final payload = raw.contains(',') ? raw.split(',').last : raw;
+  try {
+    return base64Decode(payload);
+  } catch (_) {
+    return null;
   }
 }

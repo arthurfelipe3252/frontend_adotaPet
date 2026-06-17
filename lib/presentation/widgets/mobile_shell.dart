@@ -5,6 +5,7 @@ import 'package:adota_pet/presentation/pages/mobile/catalog_page.dart';
 import 'package:adota_pet/presentation/pages/mobile/chat_page.dart';
 import 'package:adota_pet/presentation/pages/mobile/home_page.dart';
 import 'package:adota_pet/presentation/pages/mobile/profile_page.dart';
+import 'package:adota_pet/presentation/widgets/mobile_screen_header.dart';
 import 'package:adota_pet/presentation/widgets/mobile_shell_scope.dart';
 
 /// Shell de navegação do app do adotante (mobile): bottom-nav fixa de 5 abas
@@ -119,46 +120,35 @@ class _ComingSoonTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        backgroundColor: AppTheme.surface,
-        elevation: 0,
-        centerTitle: false,
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w800,
-            color: AppTheme.foreground,
-          ),
-        ),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 56, color: AppTheme.primary.withOpacity(0.4)),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.foreground,
+      body: SafeArea(
+        child: Column(
+          children: [
+            MobileScreenHeader(icon: icon, title: title, subtitle: 'Em breve'),
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(icon,
+                          size: 56, color: AppTheme.primary.withOpacity(0.4)),
+                      const SizedBox(height: 16),
+                      Text(
+                        message,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.mutedForeground,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppTheme.mutedForeground,
-                  height: 1.5,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

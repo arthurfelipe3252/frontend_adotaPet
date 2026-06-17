@@ -10,6 +10,7 @@ import 'package:adota_pet/presentation/viewmodels/adoption_request_viewmodel.dar
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:adota_pet/presentation/viewmodels/catalog_viewmodel.dart';
 import 'package:adota_pet/presentation/viewmodels/chat_viewmodel.dart';
+import 'package:adota_pet/presentation/widgets/mobile_screen_header.dart';
 import 'package:adota_pet/presentation/widgets/state_views.dart';
 import 'package:adota_pet/presentation/widgets/status_pill.dart';
 
@@ -72,9 +73,19 @@ class _ChatPageState extends State<ChatPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chat')),
       backgroundColor: AppTheme.background,
-      body: const _ConversationList(),
+      body: SafeArea(
+        child: Column(
+          children: const [
+            MobileScreenHeader(
+              icon: Icons.chat_bubble_rounded,
+              title: 'Conversas',
+              subtitle: 'Suas mensagens com as ONGs',
+            ),
+            Expanded(child: _ConversationList()),
+          ],
+        ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _startNewChat,
         backgroundColor: AppTheme.primary,
@@ -168,8 +179,9 @@ class _ConversationList extends StatelessWidget {
       onRefresh: vm.loadConversations,
       color: AppTheme.primary,
       child: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 96),
         itemCount: vm.conversations.length,
-        separatorBuilder: (_, _) => const Divider(height: 1, indent: 72),
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (_, i) {
           final conv = vm.conversations[i];
           return _ConversationTile(
@@ -204,14 +216,35 @@ class _ConversationTile extends StatelessWidget {
     final last = conversation.lastMessage;
     final hasUnread = conversation.unreadCount > 0;
 
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 26,
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: hasUnread
+              ? AppTheme.primary.withOpacity(0.45)
+              : AppTheme.border,
+          width: hasUnread ? 1.4 : 1,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 14,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 26,
               backgroundColor: AppTheme.primary.withOpacity(0.12),
               child: Text(
                 contato.isNotEmpty ? contato[0].toUpperCase() : '?',
@@ -305,6 +338,8 @@ class _ConversationTile extends StatelessWidget {
           ],
         ),
       ),
+      ),
+    ),
     );
   }
 

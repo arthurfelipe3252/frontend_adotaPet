@@ -13,8 +13,9 @@ import 'package:adota_pet/core/theme/app_theme.dart';
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:adota_pet/presentation/viewmodels/user_settings_viewmodel.dart';
 import 'package:adota_pet/presentation/widgets/confirm_dialog.dart';
+import 'package:adota_pet/presentation/widgets/mobile_screen_header.dart';
 import 'package:adota_pet/presentation/widgets/primary_button.dart';
-import 'package:adota_pet/presentation/widgets/section_card.dart';
+import 'package:adota_pet/presentation/widgets/mobile_section_card.dart';
 import 'package:adota_pet/presentation/widgets/state_views.dart';
 import 'package:adota_pet/presentation/widgets/text_field_themed.dart';
 
@@ -50,6 +51,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Timer? _cepDebounce;
   bool _didRequestLoad = false;
+  UserSettingsViewModel? _settingsVm;
   bool _showSenhaAtual = false;
   bool _showSenhaNova = false;
   bool _showConfirmarSenha = false;
@@ -74,16 +76,26 @@ class _ProfilePageState extends State<ProfilePage> {
     final usuario = context.read<AuthViewModel>().session?.usuario;
     if (usuario == null) return;
     _didRequestLoad = true;
+    final vm = context.read<UserSettingsViewModel>();
+    _settingsVm = vm;
+    // Re-sincroniza os campos quando o VM terminar de carregar — inclusive se a
+    // carga foi disparada por outra tela (ex.: a Home), caso em que o loadFor
+    // abaixo retorna cedo (guarda de isLoading) ainda sem dados.
+    vm.addListener(_onSettingsChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      final vm = context.read<UserSettingsViewModel>();
       await vm.loadFor(usuario);
       if (mounted) _syncFromVm(vm);
     });
   }
 
+  void _onSettingsChanged() {
+    if (mounted) _syncFromVm(_settingsVm!);
+  }
+
   @override
   void dispose() {
+    _settingsVm?.removeListener(_onSettingsChanged);
     _cepDebounce?.cancel();
     _nomeCtrl.dispose();
     _emailCtrl.dispose();
@@ -200,21 +212,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        backgroundColor: AppTheme.surface,
-        elevation: 0,
-        centerTitle: false,
-        title: const Text(
-          'Perfil',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            color: AppTheme.foreground,
-          ),
-        ),
-      ),
       body: vm.isLoading
           ? const LoadingView()
-          : RefreshIndicator(
+          : SafeArea(
+              child: RefreshIndicator(
               color: AppTheme.primary,
               onRefresh: () async {
                 final usuario =
@@ -261,6 +262,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
             ),
+            ),
     );
   }
 
@@ -271,11 +273,12 @@ class _ProfilePageState extends State<ProfilePage> {
     final hasImage = bytes != null && !vm.removerImagem;
     final nome = vm.nome.trim().isEmpty ? 'Adotante' : vm.nome.trim();
 
-    return Column(
+    final avatar = Stack(
+      clipBehavior: Clip.none,
       children: [
         Container(
-          width: 96,
-          height: 96,
+          width: 56,
+          height: 56,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: AppTheme.primary.withOpacity(0.12),
@@ -295,75 +298,59 @@ class _ProfilePageState extends State<ProfilePage> {
               : Text(
                   nome[0].toUpperCase(),
                   style: const TextStyle(
-                    fontSize: 36,
+                    fontSize: 22,
                     fontWeight: FontWeight.w800,
                     color: AppTheme.primary,
                   ),
                 ),
         ),
-        const SizedBox(height: 12),
-        Text(
-          nome,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        if (vm.email.isNotEmpty) ...[
-          const SizedBox(height: 2),
-          Text(
-            vm.email,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppTheme.mutedForeground,
+        Positioned(
+          right: -2,
+          bottom: -2,
+          child: Material(
+            color: AppTheme.primary,
+            shape: const CircleBorder(
+              side: BorderSide(color: AppTheme.background, width: 2.5),
+            ),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () => _pickImage(vm),
+              child: const Padding(
+                padding: EdgeInsets.all(5),
+                child: Icon(Icons.photo_camera_rounded,
+                    size: 13, color: Colors.white),
+              ),
             ),
           ),
-        ],
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppTheme.inputFill,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppTheme.border),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.verified_user_outlined,
-                  size: 14, color: AppTheme.primary),
-              SizedBox(width: 6),
-              Text(
-                'Adotante',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-              ),
-            ],
-          ),
         ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextButton.icon(
-              onPressed: () => _pickImage(vm),
-              icon: const Icon(Icons.photo_camera_outlined, size: 18),
-              label: Text(hasImage ? 'Trocar foto' : 'Adicionar foto'),
+      ],
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        MobileScreenHeader(
+          leading: avatar,
+          title: 'Meu perfil',
+          subtitle: vm.email.isNotEmpty ? vm.email : null,
+        ),
+        if (hasImage)
+          Padding(
+            padding: const EdgeInsets.only(left: 12),
+            child: TextButton.icon(
+              onPressed: vm.removeImagem,
+              icon: const Icon(Icons.delete_outline_rounded, size: 18),
+              label: const Text('Remover foto'),
+              style: TextButton.styleFrom(foregroundColor: AppTheme.destructive),
             ),
-            if (hasImage)
-              TextButton.icon(
-                onPressed: vm.removeImagem,
-                icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                label: const Text('Remover'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.destructive,
-                ),
-              ),
-          ],
-        ),
+          ),
         if (vm.fieldErrors['imagem'] != null)
-          Text(
-            vm.fieldErrors['imagem']!,
-            style: const TextStyle(color: AppTheme.destructive, fontSize: 12),
-            textAlign: TextAlign.center,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              vm.fieldErrors['imagem']!,
+              style: const TextStyle(color: AppTheme.destructive, fontSize: 12),
+            ),
           ),
       ],
     );
@@ -384,7 +371,7 @@ class _ProfilePageState extends State<ProfilePage> {
   // ── Dados pessoais ───────────────────────────────────────────────────────────
 
   Widget _buildPersonalData(UserSettingsViewModel vm) {
-    return SectionCard(
+    return MobileSectionCard(
       title: 'Dados pessoais',
       icon: Icons.person_outline_rounded,
       padding: const EdgeInsets.all(18),
@@ -433,7 +420,7 @@ class _ProfilePageState extends State<ProfilePage> {
   // ── Endereço ─────────────────────────────────────────────────────────────────
 
   Widget _buildAddress(UserSettingsViewModel vm) {
-    return SectionCard(
+    return MobileSectionCard(
       title: 'Endereço',
       icon: Icons.location_on_outlined,
       padding: const EdgeInsets.all(18),
@@ -540,7 +527,7 @@ class _ProfilePageState extends State<ProfilePage> {
   // ── Segurança (senha) ────────────────────────────────────────────────────────
 
   Widget _buildPassword(UserSettingsViewModel vm) {
-    return SectionCard(
+    return MobileSectionCard(
       title: 'Segurança',
       icon: Icons.lock_outline_rounded,
       padding: const EdgeInsets.all(18),
@@ -622,7 +609,7 @@ class _ProfilePageState extends State<ProfilePage> {
   // ── Sair ───────────────────────────────────────────────────────────────────
 
   Widget _buildLogout() {
-    return SectionCard(
+    return MobileSectionCard(
       title: 'Conta',
       icon: Icons.logout_rounded,
       padding: const EdgeInsets.all(18),
