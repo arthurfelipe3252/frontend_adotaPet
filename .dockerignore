@@ -1,0 +1,17 @@
+# Reduz o contexto de build (e o tempo) — nada disso é preciso pro build web.
+.git/
+build/
+.dart_tool/
+.idea/
+.vscode/
+android/
+ios/
+linux/
+macos/
+windows/
+test/
+*.iml
+*.log
+.flutter-plugins
+.flutter-plugins-dependencies
+coverage/
