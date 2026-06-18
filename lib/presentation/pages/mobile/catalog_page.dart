@@ -9,14 +9,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:adota_pet/core/theme/app_theme.dart';
 import 'package:adota_pet/domain/entities/pet.dart';
 import 'package:adota_pet/presentation/viewmodels/catalog_viewmodel.dart';
-import 'package:adota_pet/presentation/widgets/mobile_screen_header.dart';
 
 class CatalogPage extends StatefulWidget {
-  /// Quando `true`, o catálogo é renderizado como aba do `MobileShell`:
-  /// esconde o botão "voltar" e a bottom-nav interna (o shell já provê a nav).
-  final bool embedded;
-
-  const CatalogPage({super.key, this.embedded = false});
+  const CatalogPage({super.key});
 
   @override
   State<CatalogPage> createState() => _CatalogPageState();
@@ -49,23 +44,16 @@ class _CatalogPageState extends State<CatalogPage> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: SafeArea(
-        child: Center(
-          child: SizedBox(
-            width: _maxWidth,
-            child: Column(
-              children: [
-                const MobileScreenHeader(
-                  icon: Icons.pets_rounded,
-                  title: 'Catálogo',
-                  subtitle: 'Encontre seu novo amigo',
-                ),
-                _buildHeader(context, vm),
-                _buildFiltersPanel(vm),
-                Expanded(child: _buildBody(context, vm)),
-                if (!widget.embedded) _buildBottomNav(context),
-              ],
-            ),
+      body: Center(
+        child: SizedBox(
+          width: _maxWidth,
+          child: Column(
+            children: [
+              _buildHeader(context, vm),
+              _buildFiltersPanel(vm),
+              Expanded(child: _buildBody(context, vm)),
+              _buildBottomNav(context),
+            ],
           ),
         ),
       ),
@@ -76,9 +64,23 @@ class _CatalogPageState extends State<CatalogPage> {
 
   Widget _buildHeader(BuildContext context, CatalogViewModel vm) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      color: AppTheme.surface,
+      padding: const EdgeInsets.fromLTRB(16, 52, 16, 12),
       child: Row(
         children: [
+          // Voltar
+          GestureDetector(
+            onTap: () => context.pop(),
+            child: Container(
+              width: 38, height: 38,
+              decoration: BoxDecoration(
+                color: AppTheme.background,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(Icons.chevron_left_rounded, size: 22, color: AppTheme.foreground),
+            ),
+          ),
+          const SizedBox(width: 10),
           // Busca
           Expanded(
             child: Container(
@@ -357,7 +359,7 @@ class _CatalogPageState extends State<CatalogPage> {
             children: [
               _NavItem(icon: Icons.home_rounded, label: 'Home', onTap: () => context.go('/home')),
               _NavItem(icon: Icons.search_rounded, label: 'Catálogo', active: true, onTap: () {}),
-              _NavItem(icon: Icons.favorite_border_rounded, label: 'Match', onTap: () {}),
+              _NavItem(icon: Icons.favorite_border_rounded, label: 'Match', onTap: () => context.go('/match')),
               _NavItem(icon: Icons.person_outline_rounded, label: 'Perfil', onTap: () {}),
             ],
           ),
