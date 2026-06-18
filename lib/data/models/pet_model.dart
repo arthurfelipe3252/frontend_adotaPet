@@ -3,6 +3,7 @@ import '../../domain/entities/pet.dart';
 class PetModel {
   final String id;
   final String protetorId;
+  final String? protetorNome;
   final String nome;
   final String especie;
   final String? raca;
@@ -21,6 +22,7 @@ class PetModel {
   PetModel({
     required this.id,
     required this.protetorId,
+    this.protetorNome,
     required this.nome,
     required this.especie,
     this.raca,
@@ -41,6 +43,7 @@ class PetModel {
     return PetModel(
       id: json['id'],
       protetorId: json['protetorId'],
+      protetorNome: (json['protetor'] as Map<String, dynamic>?)?['nome'] as String?,
       nome: json['nome'],
       especie: json['especie'],
       raca: json['raca'],
@@ -65,6 +68,7 @@ class PetModel {
     return Pet(
       id: id,
       protetorId: protetorId,
+      protetorNome: protetorNome,
       nome: nome,
       especie: especie,
       raca: raca,

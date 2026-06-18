@@ -1,6 +1,7 @@
 class Pet {
   final String id;
   final String protetorId;
+  final String? protetorNome;
   final String nome;
   final String especie;
   final String? raca;
@@ -19,6 +20,7 @@ class Pet {
   const Pet({
     required this.id,
     required this.protetorId,
+    this.protetorNome,
     required this.nome,
     required this.especie,
     this.raca,
