@@ -9,9 +9,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:adota_pet/core/theme/app_theme.dart';
 import 'package:adota_pet/domain/entities/pet.dart';
 import 'package:adota_pet/presentation/viewmodels/catalog_viewmodel.dart';
+import 'package:adota_pet/presentation/widgets/mobile_screen_header.dart';
 
 class CatalogPage extends StatefulWidget {
-  const CatalogPage({super.key});
+  /// Quando `true`, o catálogo é renderizado como aba do `MobileShell`:
+  /// esconde o botão "voltar" e a bottom-nav interna (o shell já provê a nav).
+  final bool embedded;
+
+  const CatalogPage({super.key, this.embedded = false});
 
   @override
   State<CatalogPage> createState() => _CatalogPageState();
@@ -44,16 +49,23 @@ class _CatalogPageState extends State<CatalogPage> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: Center(
-        child: SizedBox(
-          width: _maxWidth,
-          child: Column(
-            children: [
-              _buildHeader(context, vm),
-              _buildFiltersPanel(vm),
-              Expanded(child: _buildBody(context, vm)),
-              _buildBottomNav(context),
-            ],
+      body: SafeArea(
+        child: Center(
+          child: SizedBox(
+            width: _maxWidth,
+            child: Column(
+              children: [
+                const MobileScreenHeader(
+                  icon: Icons.pets_rounded,
+                  title: 'Catálogo',
+                  subtitle: 'Encontre seu novo amigo',
+                ),
+                _buildHeader(context, vm),
+                _buildFiltersPanel(vm),
+                Expanded(child: _buildBody(context, vm)),
+                if (!widget.embedded) _buildBottomNav(context),
+              ],
+            ),
           ),
         ),
       ),
@@ -64,23 +76,9 @@ class _CatalogPageState extends State<CatalogPage> {
 
   Widget _buildHeader(BuildContext context, CatalogViewModel vm) {
     return Container(
-      color: AppTheme.surface,
-      padding: const EdgeInsets.fromLTRB(16, 52, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Row(
         children: [
-          // Voltar
-          GestureDetector(
-            onTap: () => context.pop(),
-            child: Container(
-              width: 38, height: 38,
-              decoration: BoxDecoration(
-                color: AppTheme.background,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.chevron_left_rounded, size: 22, color: AppTheme.foreground),
-            ),
-          ),
-          const SizedBox(width: 10),
           // Busca
           Expanded(
             child: Container(

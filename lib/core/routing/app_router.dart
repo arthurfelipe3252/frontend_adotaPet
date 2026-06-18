@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:adota_pet/presentation/pages/desktop/forgot_password_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/reports_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/dashboard_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/login_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/register_protetor_ong_page.dart';
@@ -12,13 +13,16 @@ import 'package:adota_pet/presentation/pages/desktop/splash_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/org_pet_list_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/pet_form_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/adoption_request_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/chat_page.dart' as desktop;
+import 'package:adota_pet/presentation/pages/mobile/chat_page.dart' as mobile;
 import 'package:adota_pet/presentation/pages/desktop/user_settings_page.dart';
-import 'package:adota_pet/presentation/pages/desktop/catalog_page.dart';
-import 'package:adota_pet/presentation/pages/desktop/pet_detail_page.dart';
+import 'package:adota_pet/presentation/pages/mobile/catalog_page.dart';
+import 'package:adota_pet/presentation/pages/mobile/pet_detail_page.dart';
 import 'package:adota_pet/presentation/pages/mobile/login_page.dart' as mobile;
 import 'package:adota_pet/presentation/pages/mobile/register_adotante_page.dart'
     as mobile;
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
+import 'package:adota_pet/presentation/widgets/mobile_shell.dart';
 import 'package:adota_pet/presentation/widgets/org_shell.dart';
 
 GoRouter buildAppRouter(AuthViewModel auth) {
@@ -88,9 +92,8 @@ GoRouter buildAppRouter(AuthViewModel auth) {
         routes: [
           GoRoute(
             path: '/home',
-            builder: (_, __) => kIsWeb
-                ? const DashboardPage()
-                : const _MobilePlaceholder(message: 'Home mobile em breve'),
+            builder: (_, __) =>
+                kIsWeb ? const DashboardPage() : const MobileShell(),
           ),
           GoRoute(
             path: '/pets',
@@ -125,11 +128,30 @@ GoRouter buildAppRouter(AuthViewModel auth) {
                   ),
           ),
           GoRoute(
+            path: '/chat',
+            builder: (_, __) =>
+                kIsWeb ? const desktop.ChatPage() : const mobile.ChatPage(),
+          ),
+          GoRoute(
+            path: '/chat/:id',
+            builder: (_, state) => kIsWeb
+                ? desktop.ChatPage(conversationId: state.pathParameters['id'])
+                : mobile.ChatPage(conversationId: state.pathParameters['id']),
+          ),
+          GoRoute(
             path: '/settings',
             builder: (_, __) => kIsWeb
                 ? const UserSettingsPage()
                 : const _MobilePlaceholder(
                     message: 'Configurações mobile em breve',
+                  ),
+          ),
+          GoRoute(
+            path: '/reports',
+            builder: (_, __) => kIsWeb
+                ? const ReportsPage()
+                : const _MobilePlaceholder(
+                    message: 'Relatórios disponíveis na versão web.',
                   ),
           ),
         ],
@@ -167,8 +189,11 @@ class _MobilePlaceholder extends StatelessWidget {
             children: [
               const Text('🐾', style: TextStyle(fontSize: 56)),
               const SizedBox(height: 16),
-              Text(message, textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
             ],
           ),
         ),
