@@ -16,7 +16,9 @@ import 'data/datasources/pet_remote_datasource.dart';
 import 'data/datasources/users_remote_datasource.dart';
 import 'data/datasources/reports_remote_datasource.dart';
 import 'data/datasources/chat_remote_datasource.dart';
+import 'data/datasources/match_remote_datasource.dart';
 import 'presentation/viewmodels/chat_viewmodel.dart';
+import 'presentation/viewmodels/match_viewmodel.dart';
 import 'presentation/viewmodels/adoption_request_viewmodel.dart';
 
 import 'data/repositories/adoption_request_repository_impl.dart';
@@ -79,6 +81,9 @@ Future<void> main() async {
   final chatRemote = ChatRemoteDatasource(httpClient);
   final chatViewModel = ChatViewModel(chatRemote);
 
+  final matchRemote = MatchRemoteDatasource(httpClient);
+  final matchViewModel = MatchViewModel(matchRemote);
+
   runApp(
     MultiProvider(
       providers: [
@@ -119,6 +124,8 @@ Future<void> main() async {
         ),
 
         ChangeNotifierProvider<ChatViewModel>.value(value: chatViewModel),
+
+        ChangeNotifierProvider<MatchViewModel>.value(value: matchViewModel),
 
         ChangeNotifierProvider(
           create: (_) => UserSettingsViewModel(
