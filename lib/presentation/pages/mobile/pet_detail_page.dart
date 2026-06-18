@@ -13,6 +13,7 @@ import 'package:adota_pet/presentation/viewmodels/adoption_request_viewmodel.dar
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:adota_pet/presentation/viewmodels/catalog_viewmodel.dart';
 import 'package:adota_pet/presentation/viewmodels/pet_viewmodel.dart';
+import 'package:adota_pet/presentation/widgets/state_views.dart';
 
 class PetDetailPage extends StatefulWidget {
   final String petId;
@@ -23,7 +24,6 @@ class PetDetailPage extends StatefulWidget {
 }
 
 class _PetDetailPageState extends State<PetDetailPage> {
-  bool _liked = false;
   Pet? _pet;
   bool _loading = true;
 
@@ -51,15 +51,20 @@ class _PetDetailPageState extends State<PetDetailPage> {
   Widget build(BuildContext context) {
     if (_loading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+        backgroundColor: AppTheme.background,
+        body: SafeArea(child: LoadingView()),
       );
     }
     if (_pet == null) {
       return Scaffold(
-        appBar: AppBar(),
-        body: Center(
-          child: Text('Pet não encontrado.',
-              style: GoogleFonts.nunito(color: AppTheme.mutedForeground)),
+        backgroundColor: AppTheme.background,
+        body: SafeArea(
+          child: EmptyState(
+            icon: Icons.search_off_rounded,
+            title: 'Pet não encontrado.',
+            actionLabel: 'Voltar',
+            onAction: () => context.pop(),
+          ),
         ),
       );
     }
@@ -116,7 +121,21 @@ class _PetDetailPageState extends State<PetDetailPage> {
     );
   }
 
+  (String, Color) _statusBadge(String status) {
+    switch (status) {
+      case 'disponivel':
+        return ('Disponível para adoção', AppTheme.sage);
+      case 'em_processo':
+        return ('Em processo de adoção', AppTheme.accent);
+      case 'adotado':
+        return ('Já adotado', AppTheme.mutedForeground);
+      default:
+        return ('Indisponível', AppTheme.mutedForeground);
+    }
+  }
+
   Widget _buildHero(BuildContext context, Pet pet) {
+    final (statusLabel, statusColor) = _statusBadge(pet.status);
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.42,
       child: Stack(
@@ -150,44 +169,14 @@ class _PetDetailPageState extends State<PetDetailPage> {
             ),
           ),
           Positioned(
-            top: 48, right: 16,
-            child: Row(children: [
-              GestureDetector(
-                onTap: () => setState(() => _liked = !_liked),
-                child: Container(
-                  width: 38, height: 38,
-                  decoration: BoxDecoration(
-                    color: AppTheme.surface.withOpacity(0.85),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    _liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                    size: 18,
-                    color: _liked ? const Color(0xFFE05070) : AppTheme.foreground,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                width: 38, height: 38,
-                decoration: BoxDecoration(
-                  color: AppTheme.surface.withOpacity(0.85),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.share_outlined,
-                    size: 18, color: AppTheme.foreground),
-              ),
-            ]),
-          ),
-          Positioned(
             bottom: 16, left: 16,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
-                color: AppTheme.sage.withOpacity(0.92),
+                color: statusColor.withOpacity(0.92),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Text('Disponível para adoção',
+              child: Text(statusLabel,
                   style: GoogleFonts.nunito(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -223,7 +212,7 @@ class _PetDetailPageState extends State<PetDetailPage> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1ECE3),
+                      color: AppTheme.inputFill,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -308,6 +297,8 @@ class _PetDetailPageState extends State<PetDetailPage> {
   }
 
   Widget _buildOrg(Pet pet) {
+    final nome = pet.protetorNome?.trim();
+    final hasNome = nome != null && nome.isNotEmpty;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('Responsável pela adoção',
           style: GoogleFonts.quicksand(
@@ -317,39 +308,33 @@ class _PetDetailPageState extends State<PetDetailPage> {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.border),
           boxShadow: const [
-            BoxShadow(color: Color(0x0A2A2622), blurRadius: 12, offset: Offset(0, 2))
+            BoxShadow(color: Color(0x14000000), blurRadius: 12, offset: Offset(0, 2))
           ],
         ),
         child: Row(children: [
           Container(
             width: 46, height: 46,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(colors: [AppTheme.sage, AppTheme.sageMint]),
             ),
             child: Center(
-              child: Text('O',
-                  style: GoogleFonts.quicksand(
-                      fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white)),
+              child: hasNome
+                  ? Text(nome[0].toUpperCase(),
+                      style: GoogleFonts.quicksand(
+                          fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white))
+                  : const Icon(Icons.volunteer_activism_rounded,
+                      color: Colors.white, size: 22),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('ONG Responsável',
-                  style: GoogleFonts.nunito(
-                      fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.foreground)),
-              Text('Sua cidade, BR',
-                  style: GoogleFonts.nunito(fontSize: 12, color: AppTheme.mutedForeground)),
-            ]),
-          ),
-          TextButton(
-            onPressed: () {},
-            child: Text('Ver perfil',
+            child: Text(hasNome ? nome : 'Responsável não informado',
                 style: GoogleFonts.nunito(
-                    fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.primary)),
+                    fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.foreground)),
           ),
         ]),
       ),
@@ -365,16 +350,20 @@ class _PetDetailPageState extends State<PetDetailPage> {
       ),
       child: SizedBox(
         width: double.infinity,
-        height: 42,
+        height: 52,
         child: ElevatedButton(
           onPressed: () => _openAdoptionSheet(context, pet),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.primary,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             elevation: 0,
           ),
           child: Text(
-            'Quero adotar ${pet.nome} 🐾',
+            'Quero adotar',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: GoogleFonts.quicksand(
                 fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
           ),
@@ -562,7 +551,7 @@ class _AdoptionRequestSheetState extends State<_AdoptionRequestSheet> {
                 duration: const Duration(milliseconds: 180),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: selected ? AppTheme.primary : const Color(0xFFF1ECE3),
+                  color: selected ? AppTheme.primary : AppTheme.inputFill,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: selected ? AppTheme.primary : AppTheme.border,
@@ -597,13 +586,13 @@ class _AdoptionRequestSheetState extends State<_AdoptionRequestSheet> {
             style: GoogleFonts.nunito(
                 fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.primary)),
         Text(
-            _horasDia >= 6 ? '😊 Ótimo' : _horasDia >= 3 ? '👍 Bom' : '⚠️ Pouco',
+            _horasDia >= 6 ? 'Ótimo' : _horasDia >= 3 ? 'Bom' : 'Pouco',
             style: GoogleFonts.nunito(fontSize: 12, color: AppTheme.mutedForeground)),
       ]),
       SliderTheme(
         data: SliderThemeData(
           activeTrackColor: AppTheme.primary,
-          inactiveTrackColor: const Color(0xFFF1ECE3),
+          inactiveTrackColor: AppTheme.inputFill,
           thumbColor: AppTheme.primary,
           overlayColor: AppTheme.primary.withOpacity(0.15),
           trackHeight: 6,
@@ -626,7 +615,7 @@ class _AdoptionRequestSheetState extends State<_AdoptionRequestSheet> {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: value ? AppTheme.primary.withOpacity(0.08) : const Color(0xFFF7F3F0),
+          color: value ? AppTheme.primary.withOpacity(0.08) : AppTheme.inputFill,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: value ? AppTheme.primary.withOpacity(0.4) : AppTheme.border,
@@ -673,7 +662,7 @@ class _AdoptionRequestSheetState extends State<_AdoptionRequestSheet> {
               child: Container(
                 width: 36, height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1ECE3),
+                  color: AppTheme.inputFill,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.chevron_left_rounded,
@@ -724,7 +713,7 @@ class _AdoptionRequestSheetState extends State<_AdoptionRequestSheet> {
               hintStyle: GoogleFonts.nunito(
                   fontSize: 13, color: AppTheme.mutedForeground),
               filled: true,
-              fillColor: const Color(0xFFF1ECE3),
+              fillColor: AppTheme.inputFill,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
@@ -781,7 +770,7 @@ class _AdoptionRequestSheetState extends State<_AdoptionRequestSheet> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F3F0),
+        color: AppTheme.inputFill,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppTheme.border),
       ),
@@ -823,7 +812,7 @@ class _AdoptionRequestSheetState extends State<_AdoptionRequestSheet> {
           child: const Icon(Icons.check_circle_rounded, color: AppTheme.sage, size: 44),
         ),
         const SizedBox(height: 20),
-        Text('Solicitação enviada! 🐾',
+        Text('Solicitação enviada!',
             style: GoogleFonts.quicksand(
                 fontSize: 22, fontWeight: FontWeight.w800, color: AppTheme.foreground),
             textAlign: TextAlign.center),
@@ -946,7 +935,7 @@ class _HealthCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: active ? AppTheme.sage.withOpacity(0.12) : const Color(0xFFF1ECE3),
+        color: active ? AppTheme.sage.withOpacity(0.12) : AppTheme.inputFill,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -1052,7 +1041,7 @@ class _PetHeroPhotoState extends State<_PetHeroPhoto> {
       ),
       child: Center(
         child: Text(
-          widget.nome[0].toUpperCase(),
+          widget.nome.isNotEmpty ? widget.nome[0].toUpperCase() : '?',
           style: GoogleFonts.quicksand(
               fontSize: 96,
               fontWeight: FontWeight.w800,
