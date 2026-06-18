@@ -17,8 +17,6 @@ import 'package:adota_pet/presentation/pages/desktop/chat_page.dart' as desktop;
 import 'package:adota_pet/presentation/pages/mobile/chat_page.dart' as mobile;
 import 'package:adota_pet/presentation/pages/desktop/user_settings_page.dart';
 import 'package:adota_pet/presentation/pages/mobile/catalog_page.dart';
-import 'package:adota_pet/presentation/pages/mobile/match_quiz_page.dart';
-import 'package:adota_pet/presentation/pages/mobile/match_results_page.dart';
 import 'package:adota_pet/presentation/pages/mobile/pet_detail_page.dart';
 import 'package:adota_pet/presentation/pages/mobile/login_page.dart' as mobile;
 import 'package:adota_pet/presentation/pages/mobile/register_adotante_page.dart'
@@ -94,9 +92,8 @@ GoRouter buildAppRouter(AuthViewModel auth) {
         routes: [
           GoRoute(
             path: '/home',
-            builder: (_, __) => kIsWeb
-                ? const DashboardPage()
-                : const MobileShell(),
+            builder: (_, __) =>
+                kIsWeb ? const DashboardPage() : const MobileShell(),
           ),
           GoRoute(
             path: '/pets',
@@ -172,13 +169,6 @@ GoRouter buildAppRouter(AuthViewModel auth) {
         path: '/catalog/:id',
         builder: (_, state) =>
             PetDetailPage(petId: state.pathParameters['id']!),
-      ),
-
-      // ── Match (questionário de estilo de vida + resultados) ────────────────
-      GoRoute(path: '/match', builder: (_, __) => const MatchQuizPage()),
-      GoRoute(
-        path: '/match-results',
-        builder: (_, __) => const MatchResultsPage(),
       ),
     ],
   );

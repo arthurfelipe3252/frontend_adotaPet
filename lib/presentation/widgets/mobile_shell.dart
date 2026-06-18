@@ -7,7 +7,6 @@ import 'package:adota_pet/presentation/pages/mobile/home_page.dart';
 import 'package:adota_pet/presentation/pages/mobile/profile_page.dart';
 import 'package:adota_pet/presentation/widgets/mobile_screen_header.dart';
 import 'package:adota_pet/presentation/widgets/mobile_shell_scope.dart';
-import 'package:adota_pet/presentation/pages/mobile/match_quiz_page.dart';
 
 /// Shell de navegação do app do adotante (mobile): bottom-nav fixa de 5 abas
 /// com `IndexedStack` preservando o estado de cada aba.
@@ -37,8 +36,12 @@ class _MobileShellState extends State<MobileShell> {
     // IndexedStack mantém todas as abas vivas (estado/scroll preservados).
     final tabs = <Widget>[
       const HomePage(),
-      const CatalogPage(),
-      const MatchQuizPage(),
+      const CatalogPage(embedded: true),
+      const _ComingSoonTab(
+        icon: Icons.favorite_rounded,
+        title: 'Match',
+        message: 'O match de pets por afinidade está a caminho.',
+      ),
       const ChatPage(),
       const ProfilePage(),
     ];

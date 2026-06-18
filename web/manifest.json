@@ -1,11 +1,11 @@
 {
-    "name": "adota_pet",
-    "short_name": "adota_pet",
+    "name": "AdotaPet",
+    "short_name": "AdotaPet",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FAF6F1",
+    "theme_color": "#D2693A",
+    "description": "Adoção responsável de pets.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
