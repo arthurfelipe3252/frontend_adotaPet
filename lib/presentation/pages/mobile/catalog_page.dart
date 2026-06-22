@@ -1,5 +1,3 @@
-// ignore_for_file: unnecessary_underscores
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -12,8 +10,6 @@ import 'package:adota_pet/presentation/viewmodels/catalog_viewmodel.dart';
 import 'package:adota_pet/presentation/widgets/mobile_screen_header.dart';
 
 class CatalogPage extends StatefulWidget {
-  /// Quando `true`, o catálogo é renderizado como aba do `MobileShell`:
-  /// esconde o botão "voltar" e a bottom-nav interna (o shell já provê a nav).
   final bool embedded;
 
   const CatalogPage({super.key, this.embedded = false});
@@ -383,74 +379,82 @@ class _PetGridCardState extends State<_PetGridCard> {
   @override
   Widget build(BuildContext context) {
     final pet = widget.pet;
-    return GestureDetector(
-      onTap: () => context.push('/catalog/${pet.id}'),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [BoxShadow(color: Color(0x0F2A2622), blurRadius: 16, offset: Offset(0, 4))],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Foto
-            Expanded(
-              child: Stack(
-                children: [
-                  _PetPhoto(
-                    fotosUrls: pet.fotosUrls,
-                    nome: pet.nome,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                    fontSize: 40,
-                  ),
-                  // Badge saúde
-                  Positioned(top: 8, right: 8, child: Column(
-                    children: [
-                      if (pet.vacinado) _HealthBadge(icon: Icons.vaccines_rounded),
-                      if (pet.castrado) ...[const SizedBox(height: 4), _HealthBadge(icon: Icons.content_cut_rounded)],
-                    ],
-                  )),
-                  // Favorito
-                  Positioned(top: 8, left: 8, child: GestureDetector(
-                    onTap: () => setState(() => _liked = !_liked),
-                    child: Container(
-                      width: 30, height: 30,
-                      decoration: BoxDecoration(color: AppTheme.surface.withOpacity(0.85), shape: BoxShape.circle),
-                      child: Icon(
-                        _liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                        size: 16,
-                        color: _liked ? const Color(0xFFE05070) : AppTheme.mutedForeground,
-                      ),
+    return Semantics(
+      label: 'Ver detalhes de ${pet.nome}',
+      button: true,
+      child: GestureDetector(
+        onTap: () => context.push('/catalog/${pet.id}'),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: const [BoxShadow(color: Color(0x0F2A2622), blurRadius: 16, offset: Offset(0, 4))],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Foto
+              Expanded(
+                child: Stack(
+                  children: [
+                    _PetPhoto(
+                      fotosUrls: pet.fotosUrls,
+                      nome: pet.nome,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                      fontSize: 40,
                     ),
-                  )),
-                ],
+                    // Badge saúde
+                    Positioned(top: 8, right: 8, child: Column(
+                      children: [
+                        if (pet.vacinado) _HealthBadge(icon: Icons.vaccines_rounded),
+                        if (pet.castrado) ...[const SizedBox(height: 4), _HealthBadge(icon: Icons.content_cut_rounded)],
+                      ],
+                    )),
+                    // Favorito
+                    Positioned(top: 8, left: 8, child: Semantics(
+                      label: _liked ? 'Remover dos favoritos' : 'Adicionar aos favoritos',
+                      button: true,
+                      child: GestureDetector(
+                        onTap: () => setState(() => _liked = !_liked),
+                        child: Container(
+                          width: 30, height: 30,
+                          decoration: BoxDecoration(color: AppTheme.surface.withOpacity(0.85), shape: BoxShape.circle),
+                          child: Icon(
+                            _liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                            size: 16,
+                            color: _liked ? const Color(0xFFE05070) : AppTheme.mutedForeground,
+                          ),
+                        ),
+                      ),
+                    )),
+                  ],
+                ),
               ),
-            ),
-            // Info
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(pet.nome, style: GoogleFonts.quicksand(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.foreground)),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${pet.raca ?? pet.especieLabel} · ${pet.porteLabel}',
-                    style: GoogleFonts.nunito(fontSize: 11, color: AppTheme.mutedForeground),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(children: [
-                    Icon(Icons.location_on_rounded, size: 11, color: AppTheme.mutedForeground),
-                    const SizedBox(width: 2),
-                    Expanded(child: Text('Sua região', overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.nunito(fontSize: 11, color: AppTheme.mutedForeground))),
-                  ]),
-                ],
+              // Info
+              Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(pet.nome, style: GoogleFonts.quicksand(fontSize: 14, fontWeight: FontWeight.w700, color: AppTheme.foreground)),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${pet.raca ?? pet.especieLabel} · ${pet.porteLabel}',
+                      style: GoogleFonts.nunito(fontSize: 11, color: AppTheme.mutedForeground),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      Icon(Icons.location_on_rounded, size: 11, color: AppTheme.mutedForeground),
+                      const SizedBox(width: 2),
+                      Expanded(child: Text('Sua região', overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.nunito(fontSize: 11, color: AppTheme.mutedForeground))),
+                    ]),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -473,53 +477,61 @@ class _PetListRowState extends State<_PetListRow> {
   @override
   Widget build(BuildContext context) {
     final pet = widget.pet;
-    return GestureDetector(
-      onTap: () => context.push('/catalog/${pet.id}'),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: const [BoxShadow(color: Color(0x0A2A2622), blurRadius: 12, offset: Offset(0, 2))],
+    return Semantics(
+      label: 'Ver detalhes de ${pet.nome}',
+      button: true,
+      child: GestureDetector(
+        onTap: () => context.push('/catalog/${pet.id}'),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: const [BoxShadow(color: Color(0x0A2A2622), blurRadius: 12, offset: Offset(0, 2))],
+          ),
+          child: Row(children: [
+            // Avatar
+            SizedBox(
+              width: 70, height: 70,
+              child: _PetPhoto(
+                fotosUrls: pet.fotosUrls,
+                nome: pet.nome,
+                borderRadius: BorderRadius.circular(14),
+                fontSize: 28,
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Info
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(pet.nome, style: GoogleFonts.quicksand(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.foreground)),
+                const SizedBox(height: 2),
+                Text('${pet.raca ?? pet.especieLabel} · ${pet.porteLabel} · ${pet.idadeFormatada}',
+                  style: GoogleFonts.nunito(fontSize: 12, color: AppTheme.mutedForeground)),
+                const SizedBox(height: 6),
+                Row(children: [
+                  if (pet.vacinado) _Chip(label: 'Vacinado', color: AppTheme.sage),
+                  if (pet.vacinado && pet.castrado) const SizedBox(width: 6),
+                  if (pet.castrado) _Chip(label: 'Castrado', color: AppTheme.sage),
+                ]),
+              ],
+            )),
+            // Favorito
+            Semantics(
+              label: _liked ? 'Remover dos favoritos' : 'Adicionar aos favoritos',
+              button: true,
+              child: GestureDetector(
+                onTap: () => setState(() => _liked = !_liked),
+                child: Icon(
+                  _liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  size: 20,
+                  color: _liked ? const Color(0xFFE05070) : AppTheme.mutedForeground,
+                ),
+              ),
+            ),
+          ]),
         ),
-        child: Row(children: [
-          // Avatar
-          SizedBox(
-            width: 70, height: 70,
-            child: _PetPhoto(
-              fotosUrls: pet.fotosUrls,
-              nome: pet.nome,
-              borderRadius: BorderRadius.circular(14),
-              fontSize: 28,
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Info
-          Expanded(child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(pet.nome, style: GoogleFonts.quicksand(fontSize: 15, fontWeight: FontWeight.w700, color: AppTheme.foreground)),
-              const SizedBox(height: 2),
-              Text('${pet.raca ?? pet.especieLabel} · ${pet.porteLabel} · ${pet.idadeFormatada}',
-                style: GoogleFonts.nunito(fontSize: 12, color: AppTheme.mutedForeground)),
-              const SizedBox(height: 6),
-              Row(children: [
-                if (pet.vacinado) _Chip(label: 'Vacinado', color: AppTheme.sage),
-                if (pet.vacinado && pet.castrado) const SizedBox(width: 6),
-                if (pet.castrado) _Chip(label: 'Castrado', color: AppTheme.sage),
-              ]),
-            ],
-          )),
-          // Favorito
-          GestureDetector(
-            onTap: () => setState(() => _liked = !_liked),
-            child: Icon(
-              _liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-              size: 20,
-              color: _liked ? const Color(0xFFE05070) : AppTheme.mutedForeground,
-            ),
-          ),
-        ]),
       ),
     );
   }
@@ -570,18 +582,23 @@ class _FilterGroup extends StatelessWidget {
       const SizedBox(height: 8),
       Wrap(spacing: 8, children: options.map((opt) {
         final isActive = vm.activeFilters[category]!.contains(opt.value);
-        return GestureDetector(
-          onTap: () => vm.toggleFilter(category, opt.value),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: isActive ? AppTheme.primary : const Color(0xFFF1ECE3),
-              borderRadius: BorderRadius.circular(20),
+        return Semantics(
+          label: opt.label,
+          selected: isActive,
+          button: true,
+          child: GestureDetector(
+            onTap: () => vm.toggleFilter(category, opt.value),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: isActive ? AppTheme.primary : const Color(0xFFF1ECE3),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(opt.label, style: GoogleFonts.nunito(
+                fontSize: 12, fontWeight: FontWeight.w700,
+                color: isActive ? Colors.white : AppTheme.mutedForeground,
+              )),
             ),
-            child: Text(opt.label, style: GoogleFonts.nunito(
-              fontSize: 12, fontWeight: FontWeight.w700,
-              color: isActive ? Colors.white : AppTheme.mutedForeground,
-            )),
           ),
         );
       }).toList()),
@@ -636,11 +653,9 @@ class _PetPhoto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Tenta exibir a primeira foto base64 disponível
     if (fotosUrls.isNotEmpty) {
       try {
         final raw = fotosUrls.first;
-        // Remove prefixo data:image/...;base64, se existir
         final b64 = raw.contains(',') ? raw.split(',').last : raw;
         final bytes = base64Decode(b64);
         return ClipRRect(
@@ -654,7 +669,6 @@ class _PetPhoto extends StatelessWidget {
           ),
         );
       } catch (_) {
-        // Se falhar o decode, cai no placeholder
       }
     }
     return _placeholder();

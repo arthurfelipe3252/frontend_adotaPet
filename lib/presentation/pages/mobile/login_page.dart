@@ -30,7 +30,6 @@ class _LoginPageState extends State<LoginPage> {
   final _emailCtrl = TextEditingController();
   final _senhaCtrl = TextEditingController();
   bool _showPassword = false;
-  bool _lembrarMe = false;
 
   @override
   void dispose() {
@@ -114,13 +113,10 @@ class _LoginPageState extends State<LoginPage> {
                                         emailCtrl: _emailCtrl,
                                         senhaCtrl: _senhaCtrl,
                                         showPassword: _showPassword,
-                                        lembrarMe: _lembrarMe,
                                         onTogglePassword: () => setState(
                                           () =>
                                               _showPassword = !_showPassword,
                                         ),
-                                        onToggleLembrarMe: (v) =>
-                                            setState(() => _lembrarMe = v),
                                         onSubmit: _submit,
                                       ),
                                     ),
@@ -239,9 +235,7 @@ class _LoginCard extends StatelessWidget {
   final TextEditingController emailCtrl;
   final TextEditingController senhaCtrl;
   final bool showPassword;
-  final bool lembrarMe;
   final VoidCallback onTogglePassword;
-  final ValueChanged<bool> onToggleLembrarMe;
   final VoidCallback onSubmit;
 
   const _LoginCard({
@@ -249,9 +243,7 @@ class _LoginCard extends StatelessWidget {
     required this.emailCtrl,
     required this.senhaCtrl,
     required this.showPassword,
-    required this.lembrarMe,
     required this.onTogglePassword,
-    required this.onToggleLembrarMe,
     required this.onSubmit,
   });
 
@@ -319,51 +311,24 @@ class _LoginCard extends StatelessWidget {
             errorText: vm.fieldErrors['senha'],
           ),
           const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: Checkbox(
-                      value: lembrarMe,
-                      onChanged: (v) => onToggleLembrarMe(v ?? false),
-                      activeColor: AppTheme.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'Lembrar-me',
-                    style: TextStyle(
-                      color: AppTheme.mutedForeground,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => context.push('/forgot-password'),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 0),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              TextButton(
-                onPressed: () => context.push('/forgot-password'),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(0, 0),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text(
-                  'Esqueci minha senha',
-                  style: TextStyle(
-                    color: AppTheme.primary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                  ),
+              child: const Text(
+                'Esqueci minha senha',
+                style: TextStyle(
+                  color: AppTheme.primary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
                 ),
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 10),
           PrimaryButton(

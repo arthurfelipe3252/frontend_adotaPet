@@ -152,6 +152,7 @@ class AdotaPetApp extends StatelessWidget {
       title: 'AdotaPet',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
+      themeMode: ThemeMode.light,
       routerConfig: router,
       builder: (context, child) {
         return AppNotificationsHost(child: child ?? const SizedBox.shrink());

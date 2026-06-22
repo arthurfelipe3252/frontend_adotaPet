@@ -18,6 +18,7 @@ class ForgotPasswordViewModel extends ChangeNotifier {
     }
   }
 
+  /// ⚠️ MOCK TEMPORÁRIO — não chama nenhum endpoint real.
   Future<void> submit() async {
     fieldErrors = {};
     final trimmed = email.trim();

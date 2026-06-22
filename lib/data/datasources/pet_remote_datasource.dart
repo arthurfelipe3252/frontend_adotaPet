@@ -20,8 +20,20 @@ class PetRemoteDatasource {
     final path = query.isEmpty ? '/pets' : '/pets?$query';
 
     final response = await client.get(path);
-    final List data = response.data;
-    return data.map((json) => PetModel.fromJson(json)).toList();
+    final raw = response.data;
+    // O backend envolve listas em { data: [...], meta: {...} } via @HateoasList.
+    final List<dynamic> list;
+    if (raw is List) {
+      list = raw;
+    } else if (raw is Map && raw['data'] is List) {
+      list = raw['data'] as List<dynamic>;
+    } else {
+      return [];
+    }
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map((json) => PetModel.fromJson(json))
+        .toList();
   }
 
   Future<PetModel> getPetById(String id) async {
@@ -45,7 +57,18 @@ class PetRemoteDatasource {
 
   Future<List<PetModel>> getPetsByProtetor(String protetorId) async {
     final response = await client.get('/pets/protetor/$protetorId');
-    final List data = response.data;
-    return data.map((json) => PetModel.fromJson(json)).toList();
+    final raw = response.data;
+    final List<dynamic> list;
+    if (raw is List) {
+      list = raw;
+    } else if (raw is Map && raw['data'] is List) {
+      list = raw['data'] as List<dynamic>;
+    } else {
+      return [];
+    }
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map((json) => PetModel.fromJson(json))
+        .toList();
   }
 }

@@ -80,9 +80,7 @@ GoRouter buildAppRouter(AuthViewModel auth) {
       ),
       GoRoute(
         path: '/forgot-password',
-        builder: (_, __) => kIsWeb
-            ? const ForgotPasswordPage()
-            : const _MobilePlaceholder(message: 'Em breve'),
+        builder: (_, __) => const ForgotPasswordPage(),
       ),
       // ── Painel ONG (web): todas as telas dentro do shell com sidebar ──────
       // No mobile, estas rotas exibem placeholders (sem o shell de painel).
