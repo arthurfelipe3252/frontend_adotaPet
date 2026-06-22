@@ -55,4 +55,40 @@ class AuthRemoteDatasource {
   Future<void> logoutAll() async {
     await client.post('/users/auth/logout-all');
   }
+
+  /// Solicita o link de recuperação de senha. O backend sempre responde
+  /// 204, exista ou não o email (anti-enumeração) — então aqui também não
+  /// há distinção de "sucesso real" vs "email não existe": qualquer 2xx é
+  /// tratado como sucesso pela UI.
+  Future<void> forgotPassword(String email) async {
+    try {
+      await client.post('/users/auth/forgot-password', data: {'email': email});
+    } on DioException catch (e) {
+      throw failureFromDio(
+        e,
+        customByStatus: {400: 'Informe um email válido.'},
+      );
+    }
+  }
+
+  /// Confirma a redefinição de senha usando o token recebido por e-mail.
+  Future<void> resetPassword({
+    required String token,
+    required String novaSenha,
+  }) async {
+    try {
+      await client.post(
+        '/users/auth/reset-password',
+        data: {'token': token, 'novaSenha': novaSenha},
+      );
+    } on DioException catch (e) {
+      throw failureFromDio(
+        e,
+        customByStatus: {
+          400: 'Verifique os dados informados.',
+          401: 'Link inválido ou expirado. Solicite uma nova recuperação.',
+        },
+      );
+    }
+  }
 }
