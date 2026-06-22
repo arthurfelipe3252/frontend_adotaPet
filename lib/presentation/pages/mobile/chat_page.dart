@@ -108,10 +108,12 @@ class _ChatPageState extends State<ChatPage> {
     catalogVm.loadPets();
 
     // Só solicitações que ainda não têm conversa (as demais já estão na lista).
-    final comConversa =
-        chatVm.conversations.map((c) => c.adoptionRequestId).toSet();
-    final candidatos =
-        adoptionVm.requests.where((r) => !comConversa.contains(r.id)).toList();
+    final comConversa = chatVm.conversations
+        .map((c) => c.adoptionRequestId)
+        .toSet();
+    final candidatos = adoptionVm.requests
+        .where((r) => !comConversa.contains(r.id))
+        .toList();
 
     final escolhido = await showModalBottomSheet<AdoptionRequest>(
       context: context,
@@ -181,7 +183,7 @@ class _ConversationList extends StatelessWidget {
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 96),
         itemCount: vm.conversations.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 10),
+        separatorBuilder: (_, _) => const Divider(height: 1, indent: 72),
         itemBuilder: (_, i) {
           final conv = vm.conversations[i];
           return _ConversationTile(
@@ -245,101 +247,103 @@ class _ConversationTile extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 26,
-              backgroundColor: AppTheme.primary.withOpacity(0.12),
-              child: Text(
-                contato.isNotEmpty ? contato[0].toUpperCase() : '?',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.primary,
-                ),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          titulo,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.foreground,
-                          ),
-                        ),
-                      ),
-                      if (last != null) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          _timeLabel(last.createdAt),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight:
-                                hasUnread ? FontWeight.w700 : FontWeight.w500,
-                            color: hasUnread
-                                ? AppTheme.primary
-                                : AppTheme.mutedForeground,
-                          ),
-                        ),
-                      ],
-                    ],
+                  backgroundColor: AppTheme.primary.withOpacity(0.12),
+                  child: Text(
+                    contato.isNotEmpty ? contato[0].toUpperCase() : '?',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.primary,
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          _previewText(last, souAdotante),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight:
-                                hasUnread ? FontWeight.w700 : FontWeight.w400,
-                            color: hasUnread
-                                ? AppTheme.foreground
-                                : AppTheme.mutedForeground,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      if (hasUnread)
-                        _UnreadBadge(count: conversation.unreadCount)
-                      else if (!conversation.isActive)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppTheme.border,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text(
-                            'Encerrada',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.mutedForeground,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              titulo,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.foreground,
+                              ),
                             ),
                           ),
-                        ),
+                          if (last != null) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              _timeLabel(last.createdAt),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: hasUnread
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: hasUnread
+                                    ? AppTheme.primary
+                                    : AppTheme.mutedForeground,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _previewText(last, souAdotante),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: hasUnread
+                                    ? FontWeight.w700
+                                    : FontWeight.w400,
+                                color: hasUnread
+                                    ? AppTheme.foreground
+                                    : AppTheme.mutedForeground,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          if (hasUnread)
+                            _UnreadBadge(count: conversation.unreadCount)
+                          else if (!conversation.isActive)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.border,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Text(
+                                'Encerrada',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.mutedForeground,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
-      ),
-    ),
     );
   }
 
@@ -589,8 +593,10 @@ class _StartChatItem extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(Icons.chevron_right_rounded,
-                  color: AppTheme.mutedForeground),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppTheme.mutedForeground,
+              ),
             ],
           ),
         ),
