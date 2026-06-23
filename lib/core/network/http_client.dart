@@ -19,8 +19,8 @@ class HttpClient {
     : _dio = Dio(
         BaseOptions(
           baseUrl: kIsWeb
-              ? 'https://adotapet-api.upperlavtech.com/api/v1'
-              : 'https://adotapet-api.upperlavtech.com/api/v1',
+              ? 'https://adotapet-api.upperlavtech.com/v1'
+              : 'https://adotapet-api.upperlavtech.com/v1',
           connectTimeout: const Duration(seconds: 10),
           // GET /pets traz fotos em base64 (payload pesado, ~MBs); 10s estoura
           // em conexões móveis/instáveis e a lista (com as fotos) não carrega.
