@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +7,9 @@ import 'package:adota_pet/core/theme/app_theme.dart';
 import 'package:adota_pet/domain/entities/pet.dart';
 import 'package:adota_pet/presentation/viewmodels/catalog_viewmodel.dart';
 import 'package:adota_pet/presentation/widgets/mobile_screen_header.dart';
+import 'package:adota_pet/presentation/widgets/pet_image.dart';
 import 'package:adota_pet/presentation/widgets/mobile_shell_scope.dart';
+
 
 class CatalogPage extends StatefulWidget {
   final bool embedded;
@@ -674,23 +675,18 @@ class _PetPhoto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (fotosUrls.isNotEmpty) {
-      try {
-        final raw = fotosUrls.first;
-        final b64 = raw.contains(',') ? raw.split(',').last : raw;
-        final bytes = base64Decode(b64);
-        return ClipRRect(
-          borderRadius: borderRadius,
-          child: Image.memory(
-            bytes,
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-            errorBuilder: (_, __, ___) => _placeholder(),
-          ),
-        );
-      } catch (_) {
-      }
+    final provider = firstPetImageProvider(fotosUrls);
+    if (provider != null) {
+      return ClipRRect(
+        borderRadius: borderRadius,
+        child: Image(
+          image: provider,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          errorBuilder: (_, _, _) => _placeholder(),
+        ),
+      );
     }
     return _placeholder();
   }

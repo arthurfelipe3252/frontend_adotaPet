@@ -14,6 +14,7 @@ import 'package:adota_pet/core/theme/app_theme.dart';
 import 'package:adota_pet/presentation/viewmodels/pet_viewmodel.dart';
 import 'package:adota_pet/presentation/widgets/app_dropdown_field.dart';
 import 'package:adota_pet/presentation/widgets/page_header.dart';
+import 'package:adota_pet/presentation/widgets/pet_image.dart';
 import 'package:adota_pet/presentation/widgets/primary_button.dart';
 import 'package:adota_pet/presentation/widgets/section_card.dart';
 import 'package:adota_pet/presentation/widgets/state_views.dart';
@@ -103,20 +104,11 @@ class _PetFormPageState extends State<PetFormPage> {
     });
   }
 
-  /// Resolve a imagem de um slot: bytes recém-escolhidos, ou a foto salva
-  /// (data-URI base64 → `MemoryImage`; URL http → `NetworkImage`).
+  /// Resolve a imagem de um slot: bytes recém-escolhidos têm prioridade;
+  /// senão delega ao [petImageProvider] (data-URI base64 ou URL http).
   ImageProvider? _slotImage(int i) {
     if (_fotosBytes[i] != null) return MemoryImage(_fotosBytes[i]!);
-    final url = _fotosUrls[i];
-    if (url == null || url.isEmpty) return null;
-    try {
-      if (url.startsWith('data:')) {
-        return MemoryImage(base64Decode(url.substring(url.indexOf(',') + 1)));
-      }
-      return NetworkImage(url);
-    } catch (_) {
-      return null;
-    }
+    return petImageProvider(_fotosUrls[i]);
   }
 
   void _toggleTemp(String t) {

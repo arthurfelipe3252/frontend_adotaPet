@@ -1,7 +1,5 @@
 // ignore_for_file: unnecessary_underscores
 
-import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -13,6 +11,7 @@ import 'package:adota_pet/presentation/viewmodels/adoption_request_viewmodel.dar
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:adota_pet/presentation/viewmodels/catalog_viewmodel.dart';
 import 'package:adota_pet/presentation/viewmodels/pet_viewmodel.dart';
+import 'package:adota_pet/presentation/widgets/pet_image.dart';
 import 'package:adota_pet/presentation/widgets/state_views.dart';
 
 class PetDetailPage extends StatefulWidget {
@@ -978,41 +977,33 @@ class _PetHeroPhotoState extends State<_PetHeroPhoto> {
     super.dispose();
   }
 
-  Uint8List? _decode(String raw) {
-    try {
-      final b64 = raw.contains(',') ? raw.split(',').last : raw;
-      return base64Decode(b64);
-    } catch (_) {
-      return null;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final fotos = widget.fotosUrls;
-    if (fotos.isEmpty) return _placeholder();
-    final validas = fotos.map(_decode).whereType<Uint8List>().toList();
-    if (validas.isEmpty) return _placeholder();
+    final providers = widget.fotosUrls
+        .map(petImageProvider)
+        .whereType<ImageProvider>()
+        .toList();
+    if (providers.isEmpty) return _placeholder();
 
     return Stack(children: [
       PageView.builder(
         controller: _ctrl,
-        itemCount: validas.length,
+        itemCount: providers.length,
         onPageChanged: (i) => setState(() => _current = i),
-        itemBuilder: (_, i) => Image.memory(
-          validas[i],
+        itemBuilder: (_, i) => Image(
+          image: providers[i],
           fit: BoxFit.cover,
           width: double.infinity,
           height: double.infinity,
-          errorBuilder: (_, __, ___) => _placeholder(),
+          errorBuilder: (_, _, _) => _placeholder(),
         ),
       ),
-      if (validas.length > 1)
+      if (providers.length > 1)
         Positioned(
           bottom: 12, right: 16,
           child: Row(
             children: List.generate(
-              validas.length,
+              providers.length,
               (i) => AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 margin: const EdgeInsets.symmetric(horizontal: 3),
