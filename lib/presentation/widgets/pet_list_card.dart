@@ -1,10 +1,9 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 
 import 'package:adota_pet/core/theme/app_status_colors.dart';
 import 'package:adota_pet/core/theme/app_theme.dart';
 import 'package:adota_pet/domain/entities/pet.dart';
+import 'package:adota_pet/presentation/widgets/pet_image.dart';
 import 'package:adota_pet/presentation/widgets/status_pill.dart';
 
 /// Card de pet para o grid de "Meus Pets": foto real (ou placeholder com a
@@ -21,21 +20,9 @@ class PetListCard extends StatelessWidget {
     this.onDelete,
   });
 
-  /// Resolve a primeira foto do pet: data-URI base64 (formato gravado pelo
-  /// app) vira `MemoryImage`; URL http vira `NetworkImage`.
-  ImageProvider? get _image {
-    if (pet.fotosUrls.isEmpty) return null;
-    final src = pet.fotosUrls.first;
-    if (src.isEmpty) return null;
-    try {
-      if (src.startsWith('data:')) {
-        return MemoryImage(base64Decode(src.substring(src.indexOf(',') + 1)));
-      }
-      return NetworkImage(src);
-    } catch (_) {
-      return null;
-    }
-  }
+  /// Primeira foto utilizável do pet (data-URI base64 ou URL http), ou `null`
+  /// para o build exibir o placeholder com a inicial.
+  ImageProvider? get _image => firstPetImageProvider(pet.fotosUrls);
 
   @override
   Widget build(BuildContext context) {

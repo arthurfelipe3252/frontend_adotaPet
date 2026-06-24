@@ -1,7 +1,5 @@
 // ignore_for_file: unnecessary_underscores
 
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -13,6 +11,7 @@ import 'package:adota_pet/domain/entities/match.dart';
 import 'package:adota_pet/presentation/viewmodels/match_viewmodel.dart';
 import 'package:adota_pet/presentation/widgets/confirm_dialog.dart';
 import 'package:adota_pet/presentation/widgets/mobile_screen_header.dart';
+import 'package:adota_pet/presentation/widgets/pet_image.dart';
 import 'package:adota_pet/presentation/widgets/primary_button.dart';
 import 'package:adota_pet/presentation/widgets/state_views.dart';
 
@@ -343,19 +342,7 @@ class _MatchResultCard extends StatelessWidget {
     return AppTheme.inputFill;
   }
 
-  ImageProvider? _photo() {
-    if (item.fotosUrls.isEmpty) return null;
-    final src = item.fotosUrls.first;
-    if (src.isEmpty) return null;
-    try {
-      if (src.startsWith('data:')) {
-        return MemoryImage(base64Decode(src.substring(src.indexOf(',') + 1)));
-      }
-      return NetworkImage(src);
-    } catch (_) {
-      return null;
-    }
-  }
+  ImageProvider? _photo() => firstPetImageProvider(item.fotosUrls);
 
   @override
   Widget build(BuildContext context) {
