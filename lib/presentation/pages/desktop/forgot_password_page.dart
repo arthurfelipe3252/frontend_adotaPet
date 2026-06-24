@@ -42,6 +42,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       await Future<void>.delayed(const Duration(milliseconds: 300));
       if (!mounted) return;
       context.go('/login');
+    } else if (vm.error != null) {
+      AppNotifier.instance.error(vm.error!);
     }
   }
 

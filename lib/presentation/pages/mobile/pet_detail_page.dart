@@ -79,7 +79,9 @@ class _PetDetailPageState extends State<PetDetailPage> {
           child: Stack(
             children: [
               SingleChildScrollView(
-                padding: const EdgeInsets.only(bottom: 100),
+                padding: EdgeInsets.only(
+                  bottom: 100 + MediaQuery.of(context).padding.bottom,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

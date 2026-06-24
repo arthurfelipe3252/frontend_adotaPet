@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:adota_pet/presentation/pages/desktop/forgot_password_page.dart';
+import 'package:adota_pet/presentation/pages/desktop/reset_password_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/reports_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/dashboard_page.dart';
 import 'package:adota_pet/presentation/pages/desktop/login_page.dart';
@@ -44,9 +45,16 @@ GoRouter buildAppRouter(AuthViewModel auth) {
           loc == '/login' ||
           loc == '/register-org' ||
           loc == '/register-adotante' ||
-          loc == '/forgot-password';
+          loc == '/forgot-password' ||
+          loc == '/reset-password';
 
-      if (auth.isAuthenticated && isAuthRoute) return '/home';
+      // /reset-password é a única auth route que precisa funcionar mesmo
+      // com sessão ativa (ex: usuário pediu o link estando logado em outro
+      // dispositivo/aba). As demais (login, registro) não fazem sentido
+      // para quem já está autenticado, por isso continuam redirecionando.
+      if (auth.isAuthenticated && isAuthRoute && loc != '/reset-password') {
+        return '/home';
+      }
 
       // Todas as demais rotas exigem login.
       if (!auth.isAuthenticated && !isAuthRoute) return '/login';
@@ -80,9 +88,12 @@ GoRouter buildAppRouter(AuthViewModel auth) {
       ),
       GoRoute(
         path: '/forgot-password',
-        builder: (_, __) => kIsWeb
-            ? const ForgotPasswordPage()
-            : const _MobilePlaceholder(message: 'Em breve'),
+        builder: (_, __) => const ForgotPasswordPage(),
+      ),
+      GoRoute(
+        path: '/reset-password',
+        builder: (_, state) =>
+            ResetPasswordPage(token: state.uri.queryParameters['token']),
       ),
       // ── Painel ONG (web): todas as telas dentro do shell com sidebar ──────
       // No mobile, estas rotas exibem placeholders (sem o shell de painel).

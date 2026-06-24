@@ -32,6 +32,7 @@ import 'presentation/viewmodels/reports_viewmodel.dart';
 import 'presentation/viewmodels/auth_viewmodel.dart';
 import 'presentation/viewmodels/dashboard_viewmodel.dart';
 import 'presentation/viewmodels/forgot_password_viewmodel.dart';
+import 'presentation/viewmodels/reset_password_viewmodel.dart';
 import 'presentation/viewmodels/pet_viewmodel.dart';
 import 'presentation/viewmodels/register_adotante_viewmodel.dart';
 import 'presentation/viewmodels/register_protetor_ong_viewmodel.dart';
@@ -103,7 +104,13 @@ Future<void> main() async {
           ),
         ),
 
-        ChangeNotifierProvider(create: (_) => ForgotPasswordViewModel()),
+        ChangeNotifierProvider(
+          create: (_) => ForgotPasswordViewModel(authRemote),
+        ),
+
+        ChangeNotifierProvider(
+          create: (_) => ResetPasswordViewModel(authRemote),
+        ),
 
         ChangeNotifierProvider<PetViewModel>.value(value: petViewModel),
 
@@ -152,6 +159,10 @@ class AdotaPetApp extends StatelessWidget {
       title: 'AdotaPet',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
+      // Força tema claro em todos os dispositivos enquanto o tema escuro não
+      // for implementado. Sem isso, o teclado e a status bar ficam escuros
+      // em dispositivos com dark mode ativo — inconsistente com a UI.
+      themeMode: ThemeMode.light,
       routerConfig: router,
       builder: (context, child) {
         return AppNotificationsHost(child: child ?? const SizedBox.shrink());
