@@ -8,6 +8,8 @@ import 'package:adota_pet/domain/entities/pet.dart';
 import 'package:adota_pet/presentation/viewmodels/catalog_viewmodel.dart';
 import 'package:adota_pet/presentation/widgets/mobile_screen_header.dart';
 import 'package:adota_pet/presentation/widgets/pet_image.dart';
+import 'package:adota_pet/presentation/widgets/mobile_shell_scope.dart';
+
 
 class CatalogPage extends StatefulWidget {
   final bool embedded;
@@ -20,13 +22,33 @@ class CatalogPage extends StatefulWidget {
 
 class _CatalogPageState extends State<CatalogPage> {
   final _searchController = TextEditingController();
+  bool? _wasActive;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CatalogViewModel>().loadPets();
-    });
+    // Embedded: didChangeDependencies detecta ativação da aba via MobileShellScope.
+    // Non-embedded (navegação direta): carrega imediatamente.
+    if (!widget.embedded) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.read<CatalogViewModel>().loadPets(force: true);
+      });
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!widget.embedded) return;
+
+    final scope = context.dependOnInheritedWidgetOfExactType<MobileShellScope>();
+    final isActive = scope?.currentIndex == 1; // catálogo = índice 1 no MobileShell
+    if (isActive && _wasActive != true) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.read<CatalogViewModel>().loadPets(force: true);
+      });
+    }
+    _wasActive = isActive;
   }
 
   @override

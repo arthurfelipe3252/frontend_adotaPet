@@ -11,13 +11,15 @@ class PetRemoteDatasource {
     String? porte,
     String? status,
   }) async {
-    final params = <String, String>{};
+    final params = <String, String>{
+      '_size': '200',
+    };
     if (especie != null) params['especie'] = especie;
     if (porte != null) params['porte'] = porte;
     if (status != null) params['status'] = status;
 
     final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
-    final path = query.isEmpty ? '/pets' : '/pets?$query';
+    final path = '/pets?$query';
 
     final response = await client.get(path);
     final raw = response.data;
