@@ -40,7 +40,7 @@ class _ChatPageState extends State<ChatPage> {
       final vm = context.read<ChatViewModel>();
       // Dados para resolver "{contato} - {pet}" e a lista de iniciar conversa.
       final adoptionVm = context.read<AdoptionRequestViewmodel>();
-      if (adoptionVm.requests.isEmpty) adoptionVm.loadAll();
+      adoptionVm.loadAll();
       context.read<CatalogViewModel>().loadPets(); // guardado
       await vm.loadConversations();
       if (widget.conversationId != null && context.mounted) {
@@ -113,6 +113,7 @@ class _ChatPageState extends State<ChatPage> {
         .toSet();
     final candidatos = adoptionVm.requests
         .where((r) => !comConversa.contains(r.id))
+        .where((r) => r.status == 'approved')
         .toList();
 
     final escolhido = await showModalBottomSheet<AdoptionRequest>(
