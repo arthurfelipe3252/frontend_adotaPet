@@ -18,6 +18,7 @@ import 'package:adota_pet/presentation/viewmodels/user_settings_viewmodel.dart';
 import 'package:adota_pet/presentation/widgets/confirm_dialog.dart';
 import 'package:adota_pet/presentation/widgets/mobile_screen_header.dart';
 import 'package:adota_pet/presentation/widgets/mobile_shell_scope.dart';
+import 'package:adota_pet/presentation/widgets/pet_image.dart';
 import 'package:adota_pet/presentation/widgets/primary_button.dart';
 import 'package:adota_pet/presentation/widgets/state_views.dart';
 import 'package:adota_pet/presentation/widgets/status_pill.dart';
@@ -749,25 +750,18 @@ class _PetThumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fotos = pet?.fotosUrls ?? const [];
-    if (fotos.isNotEmpty) {
-      try {
-        final raw = fotos.first;
-        final b64 = raw.contains(',') ? raw.split(',').last : raw;
-        final bytes = base64Decode(b64);
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.memory(
-            bytes,
-            width: size,
-            height: size,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => _placeholder(),
-          ),
-        );
-      } catch (_) {
-        // cai no placeholder
-      }
+    final provider = firstPetImageProvider(pet?.fotosUrls ?? const []);
+    if (provider != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image(
+          image: provider,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => _placeholder(),
+        ),
+      );
     }
     return _placeholder();
   }
