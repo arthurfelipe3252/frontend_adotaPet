@@ -25,7 +25,7 @@ class _CatalogPageState extends State<CatalogPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<CatalogViewModel>().loadPets();
+      context.read<CatalogViewModel>().loadPets(force: true);
     });
   }
 
