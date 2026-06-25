@@ -29,7 +29,17 @@ class _PetDetailPageState extends State<PetDetailPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadPet());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _loadPet();
+      // Garante as solicitações carregadas para saber se já existe pedido para
+      // este pet — evita oferecer "Quero adotar" e gerar solicitação duplicada.
+      final auth = context.read<AuthViewModel>();
+      final adoptionVm = context.read<AdoptionRequestViewmodel>();
+      if (auth.isAuthenticated && adoptionVm.requests.isEmpty) {
+        adoptionVm.loadAll();
+      }
+    });
   }
 
   Future<void> _loadPet() async {
@@ -343,32 +353,70 @@ class _PetDetailPageState extends State<PetDetailPage> {
   }
 
   Widget _buildCTA(BuildContext context, Pet pet) {
+    return Consumer<AdoptionRequestViewmodel>(
+      builder: (context, adoptionVm, _) {
+        final jaSolicitou = adoptionVm.requests.any((r) => r.petId == pet.id);
+        return Container(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          decoration: BoxDecoration(
+            color: AppTheme.surface.withOpacity(0.97),
+            border: const Border(top: BorderSide(color: AppTheme.border)),
+          ),
+          child: jaSolicitou
+              ? _alreadyRequestedBadge()
+              : SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () => _openAdoptionSheet(context, pet),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'Quero adotar',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.quicksand(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white),
+                    ),
+                  ),
+                ),
+        );
+      },
+    );
+  }
+
+  Widget _alreadyRequestedBadge() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       decoration: BoxDecoration(
-        color: AppTheme.surface.withOpacity(0.97),
-        border: const Border(top: BorderSide(color: AppTheme.border)),
+        color: AppTheme.sage.withOpacity(0.14),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: SizedBox(
-        width: double.infinity,
-        height: 52,
-        child: ElevatedButton(
-          onPressed: () => _openAdoptionSheet(context, pet),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primary,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            elevation: 0,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.check_circle_outline_rounded,
+              size: 20, color: AppTheme.sage),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              'Você já solicitou este pet',
+              style: GoogleFonts.quicksand(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.foreground),
+            ),
           ),
-          child: Text(
-            'Quero adotar',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.quicksand(
-                fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
-          ),
-        ),
+        ],
       ),
     );
   }

@@ -6,13 +6,18 @@ class PetRemoteDatasource {
 
   PetRemoteDatasource(this.client);
 
+  /// Tamanho de página pedido ao backend para trazer a lista numa requisição
+  /// só. O backend pagina com `_size` (default 10); sem isto, a lista vinha
+  /// cortada na 1ª página.
+  static const int _maxPageSize = 200;
+
   Future<List<PetModel>> getPets({
     String? especie,
     String? porte,
     String? status,
   }) async {
     final params = <String, String>{
-      '_size': '200',
+      '_size': '$_maxPageSize',
     };
     if (especie != null) params['especie'] = especie;
     if (porte != null) params['porte'] = porte;
@@ -58,7 +63,9 @@ class PetRemoteDatasource {
   }
 
   Future<List<PetModel>> getPetsByProtetor(String protetorId) async {
-    final response = await client.get('/pets/protetor/$protetorId');
+    final response = await client.get(
+      '/pets/protetor/$protetorId?_size=$_maxPageSize',
+    );
     final raw = response.data;
     final List<dynamic> list;
     if (raw is List) {

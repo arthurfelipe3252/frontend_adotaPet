@@ -31,4 +31,9 @@ class AdoptionRequest {
 
   // Alias para compatibilidade com código legado que usa .notes
   String? get notes => mensagem;
+
+  /// Conversa só é permitida pelo backend quando a solicitação está em análise
+  /// ou aprovada (demais status retornam 400). Regra única consumida pela home
+  /// e pelo chat para evitar divergência entre as telas.
+  bool get podeConversar => status == 'in_analysis' || status == 'approved';
 }

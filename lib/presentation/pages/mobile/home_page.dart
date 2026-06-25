@@ -603,11 +603,41 @@ class _RequestDetailSheet extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 22),
-              PrimaryButton(
-                label: 'Conversar',
-                trailingIcon: Icons.chat_bubble_outline_rounded,
-                onPressed: () => Navigator.pop(context, _RequestAction.chat),
-              ),
+              if (request.podeConversar)
+                PrimaryButton(
+                  label: 'Conversar',
+                  trailingIcon: Icons.chat_bubble_outline_rounded,
+                  onPressed: () => Navigator.pop(context, _RequestAction.chat),
+                )
+              else
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.inputFill,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.chat_bubble_outline_rounded,
+                        size: 18,
+                        color: AppTheme.mutedForeground,
+                      ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'A conversa fica disponível quando sua solicitação '
+                          'estiver em análise ou aprovada.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppTheme.mutedForeground,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 10),
               Row(
                 children: [

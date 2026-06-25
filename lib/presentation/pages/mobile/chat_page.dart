@@ -113,7 +113,7 @@ class _ChatPageState extends State<ChatPage> {
         .toSet();
     final candidatos = adoptionVm.requests
         .where((r) => !comConversa.contains(r.id))
-        .where((r) => r.status == 'approved')
+        .where((r) => r.podeConversar)
         .toList();
 
     final escolhido = await showModalBottomSheet<AdoptionRequest>(
