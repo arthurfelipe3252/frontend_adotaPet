@@ -1,6 +1,7 @@
 // ignore_for_file: unused_import
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:adota_pet/core/notifications/app_notifier.dart';
@@ -745,25 +746,41 @@ class _MessageInput extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
-            child: TextField(
-              controller: controller,
-              maxLines: 4,
-              minLines: 1,
-              maxLength: 2000,
-              onSubmitted: (_) => onSend(),
-              decoration: InputDecoration(
-                hintText: 'Escreva uma mensagem...',
-                hintStyle: const TextStyle(color: AppTheme.mutedForeground),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
+            // Enter envia; Shift+Enter quebra linha. Interceptamos num Focus
+            // ancestral porque, em campo multiline, o `onSubmitted` não dispara
+            // com Enter (o comportamento padrão é inserir nova linha).
+            child: Focus(
+              onKeyEvent: (node, event) {
+                final isEnter =
+                    event.logicalKey == LogicalKeyboardKey.enter ||
+                    event.logicalKey == LogicalKeyboardKey.numpadEnter;
+                if (event is KeyDownEvent &&
+                    isEnter &&
+                    !HardwareKeyboard.instance.isShiftPressed) {
+                  onSend();
+                  return KeyEventResult.handled;
+                }
+                return KeyEventResult.ignored;
+              },
+              child: TextField(
+                controller: controller,
+                maxLines: 4,
+                minLines: 1,
+                maxLength: 2000,
+                decoration: InputDecoration(
+                  hintText: 'Escreva uma mensagem...',
+                  hintStyle: const TextStyle(color: AppTheme.mutedForeground),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: AppTheme.inputFill,
+                  counterText: '',
                 ),
-                filled: true,
-                fillColor: AppTheme.inputFill,
-                counterText: '',
+                textInputAction: TextInputAction.newline,
               ),
-              textInputAction: TextInputAction.newline,
             ),
           ),
           const SizedBox(width: 12),

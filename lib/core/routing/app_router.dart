@@ -27,6 +27,11 @@ import 'package:adota_pet/presentation/widgets/mobile_shell.dart';
 import 'package:adota_pet/presentation/widgets/org_shell.dart';
 
 GoRouter buildAppRouter(AuthViewModel auth) {
+  // Rota que o usuário tentou abrir antes de a sessão terminar de restaurar
+  // (ex.: F5 no web em /pets, /chat, /reports). Guardada para voltar a ela
+  // depois do bootstrap, em vez de cair sempre no painel.
+  String? pendingDeepLink;
+
   return GoRouter(
     initialLocation: '/splash',
     refreshListenable: auth,
@@ -34,11 +39,17 @@ GoRouter buildAppRouter(AuthViewModel auth) {
       final loc = state.matchedLocation;
 
       if (!auth.bootstrapDone) {
+        // Captura a rota pretendida (o próprio /splash não conta).
+        if (loc != '/splash') pendingDeepLink = loc;
         return loc == '/splash' ? null : '/splash';
       }
 
       if (loc == '/splash') {
-        return auth.isAuthenticated ? '/home' : '/login';
+        final target = pendingDeepLink;
+        pendingDeepLink = null;
+        if (!auth.isAuthenticated) return '/login';
+        // Volta para onde o usuário estava antes do reload (se for rota real).
+        return (target != null && target != '/splash') ? target : '/home';
       }
 
       final isAuthRoute =

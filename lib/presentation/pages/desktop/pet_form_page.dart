@@ -220,13 +220,14 @@ class _PetFormPageState extends State<PetFormPage> {
           ? null
           : _descricaoController.text.trim(),
       'temperamento': _selectedTemps.isEmpty ? null : _selectedTemps.join(', '),
-      'status': _status,
       'fotosUrls': fotosUrls,
     };
 
     final vm = context.read<PetViewModel>();
+    // `status` não vai na criação — o backend rejeita o campo (pet nasce
+    // 'disponivel'). Só é enviado na edição, onde alterar o status é permitido.
     final ok = widget.isEditing
-        ? await vm.updatePet(widget.petId!, data)
+        ? await vm.updatePet(widget.petId!, {...data, 'status': _status})
         : await vm.createPet(data);
 
     if (!mounted) return;
