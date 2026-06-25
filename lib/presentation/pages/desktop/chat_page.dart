@@ -7,8 +7,10 @@ import 'package:adota_pet/core/notifications/app_notifier.dart';
 import 'package:adota_pet/core/theme/app_dimens.dart';
 import 'package:adota_pet/core/theme/app_theme.dart';
 import 'package:adota_pet/domain/entities/chat.dart';
+import 'package:adota_pet/presentation/viewmodels/adoption_request_viewmodel.dart';
 import 'package:adota_pet/presentation/viewmodels/auth_viewmodel.dart';
 import 'package:adota_pet/presentation/viewmodels/chat_viewmodel.dart';
+import 'package:adota_pet/presentation/viewmodels/pet_viewmodel.dart';
 import 'package:adota_pet/presentation/widgets/page_header.dart';
 import 'package:adota_pet/presentation/widgets/primary_button.dart';
 import 'package:adota_pet/presentation/widgets/state_views.dart';
@@ -37,6 +39,10 @@ class _ChatPageState extends State<ChatPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final vm = context.read<ChatViewModel>();
+      // Solicitações + pets do protetor para resolver "{adotante} - {pet}" no
+      // título da conversa (a mesma pessoa pode ter solicitado vários pets).
+      context.read<AdoptionRequestViewmodel>().loadAll();
+      context.read<PetViewModel>().loadPets();
       await vm.loadConversations();
       if (widget.conversationId != null && context.mounted) {
         await vm.openConversation(widget.conversationId!);
@@ -158,6 +164,28 @@ class _ConversationList extends StatelessWidget {
   }
 }
 
+/// Nome do pet de uma conversa, resolvido via `adoptionRequestId` →
+/// solicitação → pet do protetor. `null` enquanto não carregou ou não achou.
+String? _petNomeDaConversa(
+  Conversation c,
+  AdoptionRequestViewmodel adoptionVm,
+  PetViewModel petVm,
+) {
+  for (final r in adoptionVm.requests) {
+    if (r.id == c.adoptionRequestId) {
+      for (final p in petVm.pets) {
+        if (p.id == r.petId) return p.nome;
+      }
+      return null;
+    }
+  }
+  return null;
+}
+
+/// "{adotante} - {pet}" — ou só o adotante, se o pet ainda não resolveu.
+String _tituloConversa(String adotante, String? petNome) =>
+    (petNome != null && petNome.isNotEmpty) ? '$adotante - $petNome' : adotante;
+
 class _ConversationTile extends StatelessWidget {
   final Conversation conversation;
   final bool isActive;
@@ -174,6 +202,14 @@ class _ConversationTile extends StatelessWidget {
     final nomeAdotante = conversation.adopterNome ?? 'Adotante';
     final souAdotante =
         context.read<AuthViewModel>().session?.usuario.isAdotante ?? false;
+    final titulo = _tituloConversa(
+      nomeAdotante,
+      _petNomeDaConversa(
+        conversation,
+        context.watch<AdoptionRequestViewmodel>(),
+        context.watch<PetViewModel>(),
+      ),
+    );
     final last = conversation.lastMessage;
     final hasUnread = conversation.unreadCount > 0;
 
@@ -208,7 +244,7 @@ class _ConversationTile extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            nomeAdotante,
+                            titulo,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
@@ -468,6 +504,14 @@ class _ConversationHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final nome = conversation.adopterNome ?? 'Adotante';
+    final titulo = _tituloConversa(
+      nome,
+      _petNomeDaConversa(
+        conversation,
+        context.watch<AdoptionRequestViewmodel>(),
+        context.watch<PetViewModel>(),
+      ),
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       child: Row(
@@ -490,7 +534,7 @@ class _ConversationHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(nome, style: Theme.of(context).textTheme.titleSmall),
+                Text(titulo, style: Theme.of(context).textTheme.titleSmall),
                 Text(
                   conversation.isActive ? 'Conversa ativa' : 'Conversa encerrada',
                   style: TextStyle(
